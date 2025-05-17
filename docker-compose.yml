@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: odin
+      POSTGRES_PASSWORD: odin
+      POSTGRES_DB: odin_book
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+volumes:
+  db-data:

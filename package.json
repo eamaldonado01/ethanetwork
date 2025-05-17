@@ -2,14 +2,17 @@
   "name": "odin-book",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "prepare": "husky"
+    "prepare": "husky",
+    "db:seed": "NODE_OPTIONS='--loader ts-node/esm' ts-node prisma/seed.ts"
   },
   "dependencies": {
+    "@prisma/client": "^6.8.2",
     "next": "15.3.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
@@ -17,6 +20,7 @@
   "devDependencies": {
     "@commitlint/config-conventional": "^19.8.1",
     "@eslint/eslintrc": "^3",
+    "@faker-js/faker": "^9.8.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -24,14 +28,22 @@
     "commitlint": "^19.8.1",
     "eslint": "^9",
     "eslint-config-next": "15.3.2",
+    "esm": "^3.2.25",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.2",
     "prettier": "^3.5.3",
     "prettier-plugin-tailwindcss": "^0.6.11",
+    "prisma": "^6.8.2",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   },
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
+  },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx,json,md}": "prettier --write"
+    "*.{js,ts,jsx,tsx}": "eslint --fix",
+    "*.{js,ts,jsx,tsx,css,md,json}": "prettier --write"
   }
 }
