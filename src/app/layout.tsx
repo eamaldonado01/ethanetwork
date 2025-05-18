@@ -1,6 +1,8 @@
-import Link from 'next/link';
+// src/app/layout.tsx
+
 import './globals.css';
 import { Inter } from 'next/font/google';
+import { ApolloWrapper } from '@/components/ApolloWrapper';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -16,18 +18,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <nav>
-          <ul>
-            <li>
-              <Link href="/api/auth/login/">Login</Link>
-            </li>
-            <li>
-              <Link href="/api/auth/logout/">Logout</Link>
-            </li>
-          </ul>
-        </nav>
-        {children}
+      <body
+        className={`min-h-screen bg-gray-50 text-gray-900 ${inter.className}`}
+      >
+        <ApolloWrapper>{children}</ApolloWrapper>
       </body>
     </html>
   );

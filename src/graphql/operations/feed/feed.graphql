@@ -1,0 +1,26 @@
+fragment PostFragment on Post {
+  id
+  content
+  imageUrl
+  likeCount
+  commentCount
+  viewerHasLiked
+  createdAt
+  author {
+    id
+    username
+    imageUrl
+  }
+}
+
+query Feed($first: Int!, $after: ID) {
+  feed(first: $first, after: $after) {
+    edges {
+      cursor
+      node {
+        ...PostFragment
+      }
+    }
+    hasNextPage
+  }
+}

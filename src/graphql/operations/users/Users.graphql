@@ -1,0 +1,9 @@
+query Users($search: String) {
+  users(search: $search, first: 50) {
+    id
+    username
+    name
+    imageUrl
+    isFollowing
+  }
+}

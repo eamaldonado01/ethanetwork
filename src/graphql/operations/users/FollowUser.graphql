@@ -1,0 +1,7 @@
+mutation FollowUser($userId: ID!) {
+  followUser(userId: $userId) {
+    id         # returned user
+    isFollowing
+    followersCount
+  }
+}

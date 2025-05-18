@@ -1,0 +1,30 @@
+fragment PostFragment on Post {
+  id
+  content
+  imageUrl
+  likeCount
+  commentCount
+  viewerHasLiked
+  createdAt
+  author {
+    id
+    username
+    imageUrl
+  }
+}
+
+query UserProfile($username: String!) {
+  user(username: $username) {
+    id
+    username
+    name
+    bio
+    imageUrl
+    followersCount
+    followingCount
+    isFollowing
+    posts: posts(first: 10) {
+      ...PostFragment
+    }
+  }
+}
