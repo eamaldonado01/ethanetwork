@@ -1,0 +1,59 @@
+scalar DateTime
+
+type User {
+  id: ID!
+  username: String!
+  name: String!
+  bio: String
+  imageUrl: String
+  createdAt: DateTime!
+  followersCount: Int!
+  followingCount: Int!
+  isFollowing: Boolean!
+}
+
+type Post {
+  id: ID!
+  author: User!
+  content: String!
+  imageUrl: String
+  createdAt: DateTime!
+  likeCount: Int!
+  commentCount: Int!
+  viewerHasLiked: Boolean!
+  comments(first: Int = 10, after: ID): [Comment!]!
+}
+
+type Comment {
+  id: ID!
+  author: User!
+  body: String!
+  createdAt: DateTime!
+}
+
+type FeedEdge {
+  cursor: ID!
+  node: Post!
+}
+
+type FeedConnection {
+  edges: [FeedEdge!]!
+  hasNextPage: Boolean!
+}
+
+type Query {
+  me: User!
+  user(username: String!): User
+  users(search: String, first: Int = 20, after: ID): [User!]!
+  feed(first: Int = 20, after: ID): FeedConnection!
+}
+
+type Mutation {
+  createPost(content: String!, imageUrl: String): Post!
+  likePost(postId: ID!): Post!
+  unlikePost(postId: ID!): Post!
+  commentOnPost(postId: ID!, body: String!): Comment!
+  followUser(userId: ID!): User!
+  unfollowUser(userId: ID!): User!
+  updateProfile(bio: String, imageUrl: String): User!
+}

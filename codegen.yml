@@ -1,0 +1,15 @@
+schema: "src/graphql/schema.graphql"
+documents: "src/graphql/operations/**/*.graphql"
+generates:
+  src/generated/graphql.ts:
+    plugins:
+      - "typescript"
+      - "typescript-operations"
+      - "typescript-react-apollo"
+    config:
+      withHooks: true
+      scalars:
+        DateTime: string
+hooks:
+  afterAllFileWrite:
+    - prettier --write
