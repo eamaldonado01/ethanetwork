@@ -1,15 +1,21 @@
+# codegen.yml
 schema: "src/graphql/schema.graphql"
-documents: "src/graphql/operations/**/*.graphql"
+documents:
+  - "src/graphql/operations/**/*.graphql"
+
 generates:
   src/generated/graphql.ts:
     plugins:
-      - "typescript"
-      - "typescript-operations"
-      - "typescript-react-apollo"
+      - typescript
+      - typescript-operations
+      - typescript-react-apollo
     config:
+      namingConvention:
+        typeNames: keep
       withHooks: true
       scalars:
         DateTime: string
+
 hooks:
   afterAllFileWrite:
     - prettier --write

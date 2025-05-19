@@ -1,14 +1,10 @@
 // src/app/layout.tsx
-
+import ClientProviders from './clientProviders';
 import './globals.css';
-import { Inter } from 'next/font/google';
-import { ApolloWrapper } from '@/components/ApolloWrapper';
-
-const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
   title: 'Odin Book',
-  description: 'A Facebook clone built with Next.js',
+  description: '…',
 };
 
 export default function RootLayout({
@@ -18,10 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body
-        className={`min-h-screen bg-gray-50 text-gray-900 ${inter.className}`}
-      >
-        <ApolloWrapper>{children}</ApolloWrapper>
+      <body>
+        {/* Wrap your app in any client‐side providers here */}
+        <ClientProviders>{children}</ClientProviders>
       </body>
     </html>
   );

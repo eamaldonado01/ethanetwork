@@ -1,3 +1,4 @@
+// src/lib/ApolloWrapper.tsx
 'use client';
 
 import { ApolloProvider } from '@apollo/client';
@@ -10,12 +11,12 @@ export function ApolloWrapper({ children }: { children: React.ReactNode }) {
 
   return (
     <ApolloProvider client={client}>
-      <nav className="p-4 border-b flex justify-between">
+      <nav className="p-4 border-b flex justify-between bg-white">
         <Link href="/" className="font-bold text-xl">
           Odin Book
         </Link>
-        <div>
-          {isLoading ? null : user ? (
+        {!isLoading &&
+          (user ? (
             <Link href="/api/auth/logout" className="text-sm underline">
               Logout
             </Link>
@@ -23,8 +24,7 @@ export function ApolloWrapper({ children }: { children: React.ReactNode }) {
             <Link href="/api/auth/login" className="text-sm underline">
               Login
             </Link>
-          )}
-        </div>
+          ))}
       </nav>
       {children}
     </ApolloProvider>

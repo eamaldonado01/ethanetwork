@@ -1,13 +1,29 @@
+// src/app/page.tsx
 'use client';
+
+import { useCallback } from 'react';
 import { useFeedQuery } from '@/generated/graphql';
+import { useSocket } from '@/lib/useSocket';
+import { CHANNELS, type Broadcast } from '@/lib/redis';
 import { PostCard } from '@/components/PostCard';
 import { PostComposer } from '@/components/PostComposer';
 
 export default function Home() {
-  const { data, loading, fetchMore } = useFeedQuery({
+  const { data, loading, fetchMore, refetch } = useFeedQuery({
     variables: { first: 10 },
     notifyOnNetworkStatusChange: true,
   });
+
+  const handleEvent = useCallback(
+    (e: Broadcast) => {
+      if (e.type === CHANNELS.NEW_POST || e.type === CHANNELS.LIKE_UPDATE) {
+        refetch();
+      }
+    },
+    [refetch],
+  );
+
+  useSocket(handleEvent);
 
   if (loading && !data) return <p className="p-4">Loading…</p>;
 
@@ -22,7 +38,8 @@ export default function Home() {
           onClick={() =>
             fetchMore({
               variables: {
-                after: data.feed.edges[data.feed.edges.length - 1]!.cursor,
+                after: data.feed.edges.at(-1)!.cursor,
+                first: 10,
               },
             })
           }
