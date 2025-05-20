@@ -15,17 +15,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
+        with: { node-version: 20 }
       - name: Lint & unit test
         run: |
           npm ci
           npm run lint
-          npm test                     # smoke test
-
+          npm test
       - name: Build Docker image
         run: docker build -t $ECR_REPO:$IMAGE_TAG .
 
@@ -33,28 +29,22 @@ jobs:
     needs: test-build
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-
     permissions:
       id-token: write
       contents: read
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-
       - id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
-
       - name: Build & push
         run: |
           docker build -t ${{ steps.login-ecr.outputs.registry }}/$ECR_REPO:$IMAGE_TAG .
           docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPO:$IMAGE_TAG
-
-      - name: Deploy to ECS (blue → green)
+      - name: Deploy to ECS
         env:
           CLUSTER_NAME: odin-cluster
           SERVICE_NAME: odin-service
