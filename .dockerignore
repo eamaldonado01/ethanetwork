@@ -1,0 +1,16 @@
+cat > .dockerignore <<'EOF'
+# generic
+.git
+*.log
+
+# Node.js artifacts
+node_modules
+.next
+coverage
+npm-debug.log
+
+# macOS / Linux
+.DS_Store
+EOF
+git add .dockerignore
+git commit -m "build: add .dockerignore (Phase-6)"

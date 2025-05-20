@@ -1,7 +1,10 @@
 // next.config.ts
-import { type NextConfig } from 'next';
+import { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
+  reactStrictMode: true,
+  typescript: { ignoreBuildErrors: false },
   webpack(config) {
     // Prevent bundling Node built-ins in client code
     config.resolve.fallback = {

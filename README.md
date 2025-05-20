@@ -44,3 +44,11 @@ cp .env.local .env
 # Push your Prisma schema into Postgres
 
 npx prisma db push
+
+# View database
+
+npx prisma studio
+
+# inspect
+
+psql -h localhost -p 15432 -U odin odin_book_dev

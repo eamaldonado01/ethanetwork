@@ -1,20 +1,25 @@
-version: "3.9"
 services:
   db:
     image: postgres:16
     environment:
       POSTGRES_USER: odin
-      POSTGRES_PASSWORD: odin
-      POSTGRES_DB: odin_book
+      POSTGRES_PASSWORD: odinpass
+      POSTGRES_DB: odin_book_dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odin"]
+      interval: 5s
+      retries: 5
     ports:
-      - "5432:5432"
-    volumes:
-      - db-data:/var/lib/postgresql/data
+      - "15432:5432"
 
-  redis:
-    image: redis:7-alpine
+  web:
+    env_file: .env.prod
+    image: odin-book:prod
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # *** notice host *db* and the credentials above ***
+      DATABASE_URL: postgres://odin:odinpass@db:5432/odin_book_dev?schema=public
     ports:
-      - "6379:6379"
-
-volumes:
-  db-data:
+      - "3000:3000"

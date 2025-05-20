@@ -21,19 +21,23 @@ export function PostCard({ post, onLike, onNewPost }: Props) {
   });
 
   return (
-    <article className="border p-4 rounded bg-white shadow-sm mb-4">
+    <article className="border p-4 rounded bg-indigo-50 dark:bg-indigo-900 shadow-md mb-4">
       <header className="flex justify-between items-center mb-2">
         <div>
-          <strong>{post.author.username}</strong>
-          <span className="ml-2 text-xs text-gray-500">
+          <strong className="text-indigo-800 dark:text-indigo-200">
+            {post.author.username}
+          </strong>
+          <span className="ml-2 text-xs text-indigo-600 dark:text-indigo-300">
             {new Date(post.createdAt).toLocaleString()}
           </span>
         </div>
       </header>
-      <p className="mb-2">{post.content}</p>
-      <div className="flex items-center space-x-4 text-sm text-gray-600">
-        <button className="hover:text-blue-600">
-          {post.viewerHasLiked ? '💙 Unlike' : '♡ Like'} ({post.likeCount})
+      <p className="mb-2 text-indigo-700 dark:text-indigo-100">
+        {post.content}
+      </p>
+      <div className="flex items-center space-x-4 text-sm text-indigo-600 dark:text-indigo-300">
+        <button className="hover:text-indigo-800 dark:hover:text-indigo-100">
+          {post.viewerHasLiked ? '💜 Unlike' : '🤍 Like'} ({post.likeCount})
         </button>
         <span>{post.commentCount} comments</span>
       </div>
