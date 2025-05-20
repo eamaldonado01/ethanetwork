@@ -1,0 +1,70 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+
+env:
+  AWS_REGION: us-west-1
+  ECR_REPO: odin-book
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps & run lints/tests
+        run: |
+          npm ci
+          npm run lint
+          npm run test -- --passWithNoTests   # placeholder until Phase 7
+
+      - name: Build Docker image
+        run: docker build -t $ECR_REPO:$IMAGE_TAG .
+
+  deploy:
+    needs: test-build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # --------  auth to AWS via OIDC  --------
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & push
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/$ECR_REPO:$IMAGE_TAG .
+          docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPO:$IMAGE_TAG
+
+      # --------  blue-green swap (staging → prod) --------
+      - name: Deploy to ECS (blue → green)
+        env:
+          CLUSTER_NAME: odin-cluster
+          SERVICE_NAME: odin-service
+        run: |
+          aws ecs update-service \
+            --cluster $CLUSTER_NAME \
+            --service  $SERVICE_NAME \
+            --force-new-deployment \
+            --region   $AWS_REGION
