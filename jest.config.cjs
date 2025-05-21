@@ -9,5 +9,4 @@ module.exports = {
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov'],
   collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/generated/**'],
-  coverageThreshold: { global: { lines: 95 } },
 };

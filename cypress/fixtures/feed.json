@@ -1,0 +1,17 @@
+{
+  "data": {
+    "feed": {
+      "edges": [
+        {
+          "cursor": "c1",
+          "node": {
+            "id": "p1",
+            "text": "Hello world",
+            "user": { "username": "cypress" }
+          }
+        }
+      ],
+      "hasNextPage": false
+    }
+  }
+}

@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/// <reference types="jest" />
 /**
  * tests/health.test.ts
  *

@@ -14,7 +14,8 @@
     "cy:run": "cypress run",
     "prepare": "husky",
     "db:seed": "NODE_OPTIONS='--loader ts-node/esm' ts-node prisma/seed.ts",
-    "generate": "graphql-codegen --config codegen.yml"
+    "generate": "graphql-codegen --config codegen.yml",
+    "e2e": "start-server-and-test dev http://localhost:3000 cy:run"
   },
   "dependencies": {
     "@apollo/client": "^3.13.8",
@@ -80,6 +81,7 @@
     "prettier": "^3.5.3",
     "prettier-plugin-tailwindcss": "^0.6.11",
     "prisma": "^6.8.2",
+    "start-server-and-test": "^2.0.12",
     "supertest": "^7.1.1",
     "tailwindcss": "^4",
     "ts-jest": "^29.3.4",
