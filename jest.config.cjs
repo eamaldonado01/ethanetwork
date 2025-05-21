@@ -2,10 +2,12 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   rootDir: '.',
-
-  // allow imports like "@/lib/foo"
   moduleNameMapper: { '^@/(.*)$': '<rootDir>/src/$1' },
 
-  // so Jest looks in src/ before you need long ../../ paths
-  moduleDirectories: ['node_modules', '<rootDir>/src'],
+  collectCoverage: true,
+  coverageProvider: 'v8',
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov'],
+  collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/generated/**'],
+  coverageThreshold: { global: { lines: 95 } },
 };
