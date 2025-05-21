@@ -1,8 +1,9 @@
+# .github/workflows/main.yml
 name: CI/CD
 
 on:
   push:
-    branches: [main, dev]
+    branches: [ main, dev ]
   pull_request:
 
 env:
@@ -13,6 +14,19 @@ env:
 jobs:
   test-build:
     runs-on: ubuntu-latest
+    # Make all Auth0 + next + Cypress vars available to build/start/Cypress
+    env:
+      # Auth0 server-side
+      AUTH0_ISSUER_BASE_URL:   ${{ secrets.AUTH0_ISSUER_BASE_URL }}
+      AUTH0_CLIENT_ID:         ${{ secrets.AUTH0_CLIENT_ID }}
+      AUTH0_CLIENT_SECRET:     ${{ secrets.AUTH0_CLIENT_SECRET }}
+      AUTH0_SECRET:            ${{ secrets.AUTH0_SECRET }}
+      AUTH0_AUDIENCE:          ${{ secrets.AUTH0_AUDIENCE }}
+      # Next.js public
+      NEXT_PUBLIC_AUTH0_BASE_URL: ${{ secrets.NEXT_PUBLIC_AUTH0_BASE_URL }}
+      # Cypress login creds
+      AUTH0_EMAIL:             ${{ secrets.AUTH0_EMAIL }}
+      AUTH0_PW:                ${{ secrets.AUTH0_PW }}
 
     steps:
       - uses: actions/checkout@v4
@@ -20,13 +34,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm                         # optional but speeds things up
+          cache: npm
 
       - name: Install deps
         run: npm ci
 
       - name: Lint & unit + integration tests
-        run: npm run test:cov               # fails if coverage < 95 %
+        run: npm run test:cov
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
@@ -37,12 +51,8 @@ jobs:
       - name: Cypress E2E
         uses: cypress-io/github-action@v6
         with:
-          build: npm run build              # next build
-          start: npm start                  # next start -p 3000
-        env:
-          AUTH0_EMAIL:            ${{ secrets.AUTH0_EMAIL }}
-          AUTH0_PW:               ${{ secrets.AUTH0_PW }}
-          AUTH0_ISSUER_BASE_URL:  ${{ secrets.AUTH0_ISSUER_BASE_URL }}
+          build: npm run build
+          start: npm start -p 3000
 
   deploy:
     needs: test-build
@@ -54,28 +64,23 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-
       - id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
-
       - name: Build & push image
         run: |
-          docker build \
-            -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO }}:${{ env.IMAGE_TAG }} .
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO }}:${{ env.IMAGE_TAG }} .
           docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO }}:${{ env.IMAGE_TAG }}
-
       - name: Deploy to ECS
         env:
-          CLUSTER_NAME:  odin-cluster
-          SERVICE_NAME:  odin-service
+          CLUSTER_NAME: odin-cluster
+          SERVICE_NAME: odin-service
         run: |
           aws ecs update-service \
             --cluster $CLUSTER_NAME \
             --service $SERVICE_NAME \
             --force-new-deployment \
-            --region  $AWS_REGION
+            --region $AWS_REGION
