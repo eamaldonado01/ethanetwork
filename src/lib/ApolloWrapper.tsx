@@ -15,9 +15,15 @@ export function ApolloWrapper({ children }: { children: React.ReactNode }) {
         <Link href="/" className="font-bold text-xl">
           Odin Book
         </Link>
+
         {!isLoading &&
           (user ? (
-            <Link href="/api/auth/logout" className="text-sm underline">
+            /* disable prefetch so Next.js does a full navigation  */
+            <Link
+              href="/api/auth/logout"
+              prefetch={false}
+              className="text-sm underline"
+            >
               Logout
             </Link>
           ) : (

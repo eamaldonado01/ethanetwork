@@ -1,32 +1,44 @@
 /// <reference types="cypress" />
 
-// Don’t fail the test on React warnings etc.
+// keep Cypress green even if React logs errors
 Cypress.on('uncaught:exception', () => false);
 
-describe('feed (stubbed as already logged in)', () => {
-  beforeEach(() => {
-    // Fake an Auth0 session cookie (any value is fine for the stub)
-    cy.setCookie('auth-token', 'mock-token');
+beforeEach(() => {
+  // Pretend the user already has a valid cookie
+  cy.setCookie('auth-token', 'mock-token');
 
-    // Stub GET /api/auth/me  →  authenticated user
-    cy.intercept('GET', '/api/auth/me', {
-      statusCode: 200,
-      body: { email: 'cypress@example.com', name: 'Cypress Tester' },
-    }).as('me');
+  // Stub the "who am I?" call
+  cy.intercept('GET', '/api/auth/me', {
+    statusCode: 200,
+    body: { user: { sub: 'cypress|1', email: 'stub@cy.dev' } },
+  }).as('me');
 
-    // Always stub the Feed GraphQL query with our fixture
-    cy.intercept('POST', '/api/graphql', { fixture: 'feed.json' }).as(
-      'feedQuery',
-    );
-  });
+  /**
+   * Stub **only** the Feed query – leave every other
+   * GraphQL operation untouched.
+   */
+  cy.intercept('POST', '/api/graphql', (req) => {
+    const op = req.body.operationName;
+    if (
+      op === 'Feed' ||
+      (typeof op === 'undefined' && req.body.query.includes('feed('))
+    ) {
+      req.reply({ fixture: 'feed.json' });
+    } else {
+      req.continue(); // anything else hits the real back-end
+    }
+  }).as('feedQuery');
 
+  // boot the app
+  cy.visit('/');
+});
+
+describe('feed (stubbed as already logged-in)', () => {
   it('shows the Hello world post immediately', () => {
-    cy.visit('/');
+    cy.wait('@me');
+    cy.wait('@feedQuery');
 
-    // Ensure both stubs have completed
-    cy.wait(['@me', '@feedQuery']);
-
-    // The post from the fixture should now be on screen
-    cy.contains('Hello world').should('be.visible');
+    // the text from our fixture must appear
+    cy.contains('Hello world', { timeout: 10_000 }).should('be.visible');
   });
 });

@@ -1,19 +1,13 @@
 {
   "data": {
     "feed": {
-      "__typename": "FeedConnection",
       "edges": [
         {
-          "__typename": "FeedEdge",
           "cursor": "c1",
           "node": {
-            "__typename": "Post",
             "id": "p1",
             "text": "Hello world",
-            "user": {
-              "__typename": "User",
-              "username": "cypress"
-            }
+            "user": { "username": "cypress" }
           }
         }
       ],

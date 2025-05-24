@@ -13,4 +13,4 @@ npm-debug.log
 .DS_Store
 EOF
 git add .dockerignore
-git commit -m "build: add .dockerignore (Phase-6)"
+git commit -m "build: add .dockerignore"

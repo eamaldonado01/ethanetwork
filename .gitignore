@@ -45,3 +45,22 @@ next-env.d.ts
 infra/terraform/.terraform/
 infra/terraform/terraform.tfstate*
 infra/terraform/tfplan
+
+# Terraform artifacts & IAM bootstrap
+infra/terraform/plan.out
+infra/terraform/iam/
+
+# AWS CLI scratch files
+cw-logs-read.json
+cw-put-ret.json
+param-secrets.json
+register.json
+td.json
+full.json
+
+# stray CLI artifacts (e.g. “--query”, “--region”, etc.)
+--*
+
+# Cypress screenshots & videos
+cypress/screenshots/
+cypress/videos/
