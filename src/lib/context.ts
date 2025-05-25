@@ -15,7 +15,7 @@ export async function buildContext(
   res: NextApiResponse,
 ): Promise<GraphQLContext> {
   // Grab the session that withApiAuthRequired validated
-  const session = getSession(req, res);
+  const session = await getSession(req, res);
   if (!session?.user?.sub) {
     throw new Error('Unauthenticated');
   }
