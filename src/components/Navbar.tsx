@@ -1,26 +1,26 @@
+// src/components/Navbar.tsx
 'use client';
 
-import Link from 'next/link';
 import { useUser } from '@/lib/useUser';
+import Link from 'next/link';
 
 export default function Navbar() {
   const { user, isLoading } = useUser();
 
   return (
-    <nav className="p-4 border-b flex justify-between bg-white">
-      <Link href="/" className="font-bold text-xl">
-        Odin Book
+    <nav className="flex justify-between border-b bg-white p-4">
+      <Link href="/" className="text-xl font-bold">
+        ethanetwork
       </Link>
 
-      {isLoading ? null : user ? (
-        // full‐page nav ensures the cookie is sent
-        <Link href="/api/auth/logout" className="text-sm underline">
+      {!isLoading && user && (
+        <button
+          type="button"
+          onClick={() => window.location.assign('/api/auth/logout')}
+          className="text-sm underline"
+        >
           Logout
-        </Link>
-      ) : (
-        <Link href="/api/auth/login" className="text-sm underline">
-          Login
-        </Link>
+        </button>
       )}
     </nav>
   );
