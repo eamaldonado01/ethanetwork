@@ -6,9 +6,12 @@ mutation CreatePost($content: String!, $imageUrl: String) {
     createdAt
     likeCount
     commentCount
+    viewerHasLiked
     author {
       id
       username
+      name
+      imageUrl
     }
   }
 }

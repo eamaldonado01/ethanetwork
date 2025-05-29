@@ -1,9 +1,9 @@
 query Users($search: String) {
-  users(search: $search, first: 50) {
+  users(search: $search) {
     id
     username
     name
     imageUrl
-    isFollowing
+    isFollowing        
   }
 }

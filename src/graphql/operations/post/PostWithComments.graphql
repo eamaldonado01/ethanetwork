@@ -1,0 +1,31 @@
+# Single-post detail query  (self-contained — no external fragments)
+query PostWithComments($id: ID!) {
+  post(id: $id) {
+    id
+    content
+    createdAt
+    imageUrl           
+    likeCount
+    commentCount
+    viewerHasLiked
+
+    author {
+      id
+      username
+      name
+      imageUrl
+    }
+
+    comments {
+      id
+      body
+      createdAt
+      author {
+        id
+        username
+        name
+        imageUrl
+      }
+    }
+  }
+}

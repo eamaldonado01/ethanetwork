@@ -4,7 +4,20 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  // 50 users
+  // 🔑 Ensure the shared *guest* user always exists -----------------------
+  await prisma.user.upsert({
+    where: { id: 'guest' }, // ← constant primary-key
+    update: {}, // no fields to update; “guest” is immutable
+    create: {
+      id: 'guest',
+      email: 'guest@ethanetwork.com',
+      username: 'guest',
+      name: 'Guest User',
+      bio: 'I am a shared guest account.',
+    },
+  });
+
+  // 50 demo users ---------------------------------------------------------
   const users = await Promise.all(
     Array.from({ length: 50 }).map(async () => {
       const email = faker.internet.email().toLowerCase();
@@ -21,7 +34,7 @@ async function main() {
     }),
   );
 
-  // Each user writes 10 posts (≈ 500 total)
+  // Each user writes 10 posts (~500 total) -------------------------------
   for (const user of users) {
     await Promise.all(
       Array.from({ length: 10 }).map(() =>
@@ -38,7 +51,7 @@ async function main() {
     );
   }
 
-  // Random follows
+  // Random follows -------------------------------------------------------
   for (const follower of users) {
     const toFollow = faker.helpers.arrayElements(
       users.filter((u) => u.id !== follower.id),
@@ -53,29 +66,35 @@ async function main() {
     );
   }
 
-  // Random likes + comments
+  // Random likes + comments ---------------------------------------------
   const posts = await prisma.post.findMany({
     select: { id: true, authorId: true },
   });
 
   for (const post of posts) {
     // likes
-    const likers = faker.helpers.arrayElements(users, { min: 0, max: 20 });
+    const likers = faker.helpers.arrayElements(users, {
+      min: 0,
+      max: 40,
+    });
     await Promise.all(
-      likers.map((u) =>
-        prisma.like
-          .create({ data: { userId: u.id, postId: post.id } })
-          .catch(() => null),
+      likers.map((liker) =>
+        prisma.like.create({
+          data: { postId: post.id, userId: liker.id },
+        }),
       ),
     );
 
     // comments
-    const numComments = faker.number.int({ min: 0, max: 6 });
+    const commentators = faker.helpers.arrayElements(users, {
+      min: 0,
+      max: 10,
+    });
     await Promise.all(
-      Array.from({ length: numComments }).map(() =>
+      commentators.map((c) =>
         prisma.comment.create({
           data: {
-            authorId: faker.helpers.arrayElement(users).id,
+            authorId: c.id,
             postId: post.id,
             body: faker.lorem.sentence(),
           },

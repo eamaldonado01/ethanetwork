@@ -1,0 +1,15 @@
+fragment PostFragment on Post {
+  id
+  content
+  imageUrl
+  createdAt
+  author {
+    id
+    username
+    name
+    imageUrl   
+  }
+  likeCount
+  commentCount
+  viewerHasLiked
+}

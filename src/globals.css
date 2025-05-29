@@ -1,0 +1,120 @@
+/* ─── src/globals.css ──────────────────────────────────────────────── */
+
+/* 1 ▸ Tailwind base / components / utilities  */
+@import 'tailwindcss';
+
+/* 2 ▸ Design-tokens (light first, then overridden in dark) */
+:root {
+  /* neutrals */
+  --bg: #fdfdfd;
+  --bg-subtle: #f1f1f1;
+  --border: #e5e5e5;
+  --text: #111;
+  --text-soft: #555;
+
+  /* brand accent */
+  --accent: #4f46e5; /* indigo-600 */
+  --accent-hover: #6366f1; /* indigo-500 */
+  --accent-muted: #c7d2fe; /* indigo-200 */
+
+  /* fonts */
+  --font-sans: var(--font-geist-sans, Inter, sans-serif);
+  --font-mono: var(--font-geist-mono, ui-monospace, SFMono-Regular, monospace);
+}
+
+/* 3 ▸ Dark-theme overrides */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0a0a0a;
+    --bg-subtle: #111;
+    --border: #242424;
+    --text: #f1f1f1;
+    --text-soft: #9b9b9b;
+
+    /* identical accent values in dark mode */
+    --accent: #4f46e5;
+    --accent-hover: #6366f1;
+    --accent-muted: #312e81; /* indigo-900-ish, muted */
+  }
+}
+
+.dark :root {
+  --bg: #0a0a0a;
+  --bg-subtle: #111;
+  --border: #242424;
+  --text: #f1f1f1;
+  --text-soft: #9b9b9b;
+
+  --accent: #4f46e5;
+  --accent-hover: #6366f1;
+  --accent-muted: #312e81;
+}
+
+/* 4 ▸ Global element resets / defaults */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#__next,
+body > div:first-child {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 5 ▸ Utility helpers */
+.text-soft {
+  color: var(--text-soft) !important;
+}
+.border-base {
+  border-color: var(--border) !important;
+}
+.bg-panel {
+  background: var(--bg-subtle) !important;
+}
+
+/* ——— updated anchor rules ——— */
+a {
+  color: inherit;
+  text-decoration: none;
+} /* ← inherits utility colour */
+a:hover {
+  color: var(--accent-hover);
+}
+
+/* 6 ▸ Interactive cursor helper — all clickable elements get pointer */
+:where(
+  [onclick],
+  button,
+  a,
+  input[type='button'],
+  input[type='submit'],
+  [role='button'],
+  [role='link'],
+  summary,
+  label
+) {
+  cursor: pointer;
+}
+
+/* 7 ▸ Expose tokens to Tailwind utilities (optional) */
+@layer base {
+  :root {
+    --tw-color-background: var(--bg);
+    --tw-color-foreground: var(--text);
+    --tw-color-accent: var(--accent);
+    --tw-color-border: var(--border);
+  }
+}
+
+.post-hover:hover {
+  background: #262626; /* or use Tailwind: hover:bg-zinc-800 */
+}

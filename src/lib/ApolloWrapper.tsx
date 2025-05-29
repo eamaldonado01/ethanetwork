@@ -11,28 +11,25 @@ export function ApolloWrapper({ children }: { children: React.ReactNode }) {
 
   return (
     <ApolloProvider client={client}>
-      <nav className="p-4 border-b flex justify-between bg-white">
-        <Link href="/" className="font-bold text-xl">
-          Odin Book
+      {/* optional top-bar, kept minimal now */}
+      <nav className="flex justify-between border-b bg-white p-4">
+        <Link href="/home" className="text-xl font-bold">
+          ethanetwork
         </Link>
 
-        {!isLoading &&
-          (user ? (
-            /* disable prefetch so Next.js does a full navigation  */
-            <Link
-              href="/api/auth/logout"
-              prefetch={false}
-              className="text-sm underline"
-            >
-              Logout
-            </Link>
-          ) : (
-            <Link href="/api/auth/login" className="text-sm underline">
-              Login
-            </Link>
-          ))}
+        {!isLoading && user && (
+          <Link
+            href="/api/auth/logout"
+            prefetch={false}
+            className="text-sm underline"
+          >
+            Logout
+          </Link>
+        )}
       </nav>
+
       {children}
     </ApolloProvider>
   );
 }
+export default ApolloWrapper;

@@ -5,32 +5,21 @@ export interface SessionUser {
   sub: string;
   name?: string;
   email?: string;
+  /* extra fields most IdPs provide */
+  picture?: string;
+  image?: string;
 }
 
-/**
- * Fetcher for SWR: takes a URL string, returns SessionUser or null.
- */
+/** plain fetcher that returns the parsed user or null */
 async function fetcher(url: string): Promise<SessionUser | null> {
-  const res = await fetch(url, {
-    credentials: 'include', // send the Auth0 session cookie
-  });
-  if (!res.ok) {
-    return null;
-  }
-  return res.json();
+  const res = await fetch(url, { credentials: 'include' });
+  return res.ok ? res.json() : null;
 }
 
-/**
- * Hook to load the current session user.
- */
 export function useUser() {
   const { data, error, isLoading } = useSWR<SessionUser | null, Error>(
     '/api/auth/me',
     fetcher,
   );
-  return {
-    user: data,
-    error,
-    isLoading,
-  };
+  return { user: data ?? undefined, error, isLoading };
 }

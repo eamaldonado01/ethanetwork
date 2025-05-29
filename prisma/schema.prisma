@@ -9,67 +9,66 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  username      String    @unique
-  name          String
-  bio           String?   @db.Text
-  imageUrl      String?   // S3 / Gravatar
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  name      String
+  bio       String?  @db.Text
+  website   String?              
+  github    String?
+  imageUrl  String?               // S3 / Gravatar
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  posts         Post[]
-  comments      Comment[]
-  likes         Like[]
-  followers     Follow[]  @relation("followers")
-  following     Follow[]  @relation("following")
-}
-
-model Post {
-  id        String    @id @default(cuid())
-  author    User      @relation(fields: [authorId], references: [id])
-  authorId  String
-  content   String    @db.Text
-  imageUrl  String?   // optional image
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
+  /* relations ------------------------------------------------------ */
+  posts     Post[]
   comments  Comment[]
   likes     Like[]
 
-  @@index([authorId, createdAt])
+  followers Follow[] @relation("followers")  // users who follow *this* user
+  following Follow[] @relation("following")  // users this user follows
+}
+
+
+model Post {
+  id        String   @id @default(cuid())
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  content   String
+  imageUrl  String?
+  comments  Comment[]
+  likes     Like[]
+  createdAt DateTime @default(now())
 }
 
 model Comment {
-  id        String    @id @default(cuid())
-  author    User      @relation(fields: [authorId], references: [id])
-  authorId  String
-  post      Post      @relation(fields: [postId], references: [id])
+  id        String   @id @default(cuid())
+  body      String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade) // ⬅︎ NEW
   postId    String
-  body      String    @db.Text
-  createdAt DateTime  @default(now())
-
-  @@index([postId, createdAt])
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  createdAt DateTime @default(now())
 }
 
 model Like {
-  user       User      @relation(fields: [userId], references: [id])
-  userId     String
-  post       Post      @relation(fields: [postId], references: [id])
-  postId     String
-  createdAt  DateTime  @default(now())
-
-  @@id([userId, postId])
-  @@index([postId])
+  id        String   @id @default(cuid())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade) // ⬅︎ NEW
+  postId    String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  @@unique([userId, postId])
 }
 
 model Follow {
-  follower    User     @relation("following", fields: [followerId], references: [id])
-  followerId  String
-  following   User     @relation("followers", fields: [followingId], references: [id])
-  followingId String
-  createdAt   DateTime @default(now())
+  /* follower → following is a many-to-many self-relation on User */
+  follower   User   @relation("following", fields: [followerId],  references: [id])
+  followerId String
 
-  @@id([followerId, followingId])
-  @@index([followingId])
+  following  User   @relation("followers", fields: [followingId], references: [id])
+  followingId String
+
+  createdAt  DateTime @default(now())
+
+  @@id([followerId, followingId])             // composite PK prevents duplicates
 }

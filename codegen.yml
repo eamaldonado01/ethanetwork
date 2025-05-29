@@ -2,6 +2,7 @@
 schema: "src/graphql/schema.graphql"
 documents:
   - "src/graphql/operations/**/*.graphql"
+  - 'src/graphql/fragments/*.graphql' 
 
 generates:
   src/generated/graphql.ts:
@@ -19,3 +20,5 @@ generates:
 hooks:
   afterAllFileWrite:
     - prettier --write
+require:
+  - '@graphql-codegen/import-types-preset'  

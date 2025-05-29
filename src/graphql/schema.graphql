@@ -1,16 +1,26 @@
+# ─── Scalars ────────────────────────────────────────────────────────────
 scalar DateTime
 
+# ─── Core types ─────────────────────────────────────────────────────────
 type User {
   id: ID!
   username: String!
-  name: String!
+  email: String!
+  name: String
   bio: String
+  website: String
+  github: String                 
   imageUrl: String
   createdAt: DateTime!
+  updatedAt: DateTime!
+
   followersCount: Int!
   followingCount: Int!
+
+  # posts as a simple array (no args)
+  posts: [Post!]!
+
   isFollowing: Boolean!
-  posts(first: Int = 10, after: ID): [Post!]!
 }
 
 type Post {
@@ -19,9 +29,11 @@ type Post {
   content: String!
   imageUrl: String
   createdAt: DateTime!
+
   likeCount: Int!
   commentCount: Int!
   viewerHasLiked: Boolean!
+
   comments(first: Int = 10, after: ID): [Comment!]!
 }
 
@@ -32,6 +44,7 @@ type Comment {
   createdAt: DateTime!
 }
 
+# Cursor-based pagination for the global feed
 type FeedEdge {
   cursor: ID!
   node: Post!
@@ -42,11 +55,17 @@ type FeedConnection {
   hasNextPage: Boolean!
 }
 
+# ─── Root operations ────────────────────────────────────────────────────
 type Query {
   me: User!
   user(username: String!): User
   users(search: String, first: Int = 20, after: ID): [User!]!
+
   feed(first: Int = 20, after: ID): FeedConnection!
+
+  post(id: ID!): Post!
+  postById(id: ID!): Post!          # ⬅︎ deprecated alias
+  postsByLikes(first: Int = 20): [Post!]!
 }
 
 type Mutation {
@@ -56,5 +75,14 @@ type Mutation {
   commentOnPost(postId: ID!, body: String!): Comment!
   followUser(userId: ID!): User!
   unfollowUser(userId: ID!): User!
-  updateProfile(bio: String, imageUrl: String): User!
+
+  updateProfile(
+    bio: String
+    website: String
+    github: String                
+    imageUrl: String
+  ): User!
+
+  deletePost(postId: ID!): Boolean!
+  deleteComment(commentId: ID!): Boolean!
 }

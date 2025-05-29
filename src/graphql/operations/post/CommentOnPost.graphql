@@ -1,0 +1,13 @@
+mutation CommentOnPost($postId: ID!, $body: String!) {
+  commentOnPost(postId: $postId, body: $body) {
+    id
+    body
+    createdAt
+    author {
+      id
+      username
+      name
+      imageUrl
+    }
+  }
+}

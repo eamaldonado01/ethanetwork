@@ -1,0 +1,8 @@
+# import ../../fragments/PostFragment.graphql
+
+# Top-liked posts (flat list)
+query PostsByLikes($first: Int = 20) {
+  postsByLikes(first: $first) {
+    ...PostFragment
+  }
+}

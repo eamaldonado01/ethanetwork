@@ -1,0 +1,16 @@
+mutation UpdateProfile(
+  $bio: String
+  $website: String
+  $github: String        
+) {
+  updateProfile(
+    bio: $bio
+    website: $website
+    github: $github        
+  ) {
+    id
+    bio
+    website
+    github                
+  }
+}

@@ -1,17 +1,4 @@
-fragment PostFragment on Post {
-  id
-  content
-  imageUrl
-  likeCount
-  commentCount
-  viewerHasLiked
-  createdAt
-  author {
-    id
-    username
-    imageUrl
-  }
-}
+# import ../../fragments/PostFragment.graphql
 
 query UserProfile($username: String!) {
   user(username: $username) {
@@ -19,12 +6,13 @@ query UserProfile($username: String!) {
     username
     name
     bio
+    website
     imageUrl
+    github
     followersCount
     followingCount
     isFollowing
-    posts: posts(first: 10) {
-      ...PostFragment
-    }
+
+    posts { ...PostFragment }
   }
 }

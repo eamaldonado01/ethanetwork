@@ -1,4 +1,4 @@
-// src/lib/redis.ts
+// src/lib/redis.ts  (unchanged ✓)
 export const CHANNELS = {
   NEW_POST: 'new-post',
   LIKE_UPDATE: 'like-update',

@@ -1,24 +1,23 @@
-// src/pages/api/graphql.ts
+// ─── src/pages/api/graphql.ts ──────────────────────────────────────────
 import { ApolloServer, gql } from 'apollo-server-micro';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { withApiAuthRequired } from '@auth0/nextjs-auth0';
 import fs from 'fs';
 import path from 'path';
 
 import { resolvers } from '@/graphql/resolvers';
 import { buildContext } from '@/lib/context';
 
-// Load your SDL from schema.graphql
+/* 1️⃣  SDL ------------------------------------------------------------------ */
 const sdl = fs.readFileSync(
   path.join(process.cwd(), 'src', 'graphql', 'schema.graphql'),
   'utf8',
 );
 const typeDefs = gql(sdl);
 
-const server = new ApolloServer({
+/* 2️⃣  Single Apollo instance ---------------------------------------------- */
+const apollo = new ApolloServer({
   typeDefs,
   resolvers,
-  // Now context gets both req and res so we can call getSession()
   context: async ({
     req,
     res,
@@ -28,22 +27,26 @@ const server = new ApolloServer({
   }) => buildContext(req, res),
 });
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+/* 3️⃣  Lazy-start guard to avoid race conditions --------------------------- */
+let startPromise: Promise<void> | null = null;
+let handler: ReturnType<typeof apollo.createHandler> | null = null;
 
-let started = false;
+async function ensureStarted() {
+  if (!startPromise) {
+    startPromise = apollo.start().then(() => {
+      handler = apollo.createHandler({ path: '/api/graphql' });
+    });
+  }
+  await startPromise;
+}
 
-export default withApiAuthRequired(async function handler(
+/* 4️⃣  Next.js API route ---------------------------------------------------- */
+export const config = { api: { bodyParser: false } };
+
+export default async function graphqlRoute(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
-  if (!started) {
-    await server.start();
-    started = true;
-  }
-  const graphqlHandler = server.createHandler({ path: '/api/graphql' });
-  return graphqlHandler(req, res);
-});
+  await ensureStarted(); // first-call initialisation
+  return handler!(req, res); // safe after ensureStarted()
+}

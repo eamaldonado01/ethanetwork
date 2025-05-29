@@ -1,0 +1,17 @@
+# import ../../fragments/PostFragment.graphql
+
+query Me {
+  me {
+    id
+    email
+    username
+    name
+    bio
+    website
+    imageUrl
+    github
+    followersCount
+    followingCount
+    posts { ...PostFragment }
+  }
+}

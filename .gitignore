@@ -45,6 +45,7 @@ next-env.d.ts
 infra/terraform/.terraform/
 infra/terraform/terraform.tfstate*
 infra/terraform/tfplan
+infra/terraform/*.auto.tfvars
 
 # Terraform artifacts & IAM bootstrap
 infra/terraform/plan.out
@@ -64,3 +65,6 @@ full.json
 # Cypress screenshots & videos
 cypress/screenshots/
 cypress/videos/
+
+#ignore project guide
+guide.md

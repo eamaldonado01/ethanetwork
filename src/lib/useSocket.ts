@@ -5,18 +5,21 @@ import { useEffect, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import type { Broadcast } from './redis';
 
-let socket: Socket | null = null;
+let shared: Socket | null = null;
 
 export function useSocket(onEvent: (evt: Broadcast) => void) {
+  /* one singleton per tab */
   const [s] = useState<Socket>(() => {
-    if (!socket) {
-      socket = io(undefined, {
+    if (!shared) {
+      /* host omitted → window.location.origin  */
+      shared = io({
+        // ⟵ no “localhost”
         path: '/api/socket',
         transports: ['websocket'],
         withCredentials: true,
       });
     }
-    return socket!;
+    return shared;
   });
 
   useEffect(() => {

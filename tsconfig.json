@@ -7,12 +7,13 @@
     "jsx": "preserve",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@/components/*": ["src/components/*"],
+      "@/lib/*": ["src/lib/*"],
+      "@/types": ["src/types/index.ts"]
     },
 
-    // ▼ add cypress here ▼
-    "types": ["node", "jest", "cypress"],
-    // ▲ end types ▲
+    "types": ["node", "jest", "cypress", "react", "react-dom", "next"],
 
     "strict": true,
     "skipLibCheck": true,
@@ -37,7 +38,9 @@
     ".next/types/**/*.ts",
     "src/**/*",
     "cypress/e2e/**/*.ts",
-    "src/types/**/*.d.ts"
+    "src/types/**/*.d.ts",
+    "next.config.cjs",
+    "next.config.mjs"
   ],
-  "exclude": ["node_modules", ".next"]
+  "exclude": ["node_modules", ".next", "tests", "**/*.test.ts", "**/*.test.tsx"]
 }

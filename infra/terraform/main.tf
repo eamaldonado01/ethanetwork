@@ -2,9 +2,7 @@
 #  production stack                       #
 ###########################################
 
-provider "aws" {
-  region = var.region
-}
+
 
 ########################
 #        VPC           #
@@ -163,7 +161,8 @@ resource "aws_lb_target_group" "blue" {
   vpc_id      = aws_vpc.main.id
 
   health_check {
-    path = "/"
+    path    = "/api/healthz"
+    matcher = "200-399"
   }
 }
 
@@ -175,7 +174,8 @@ resource "aws_lb_target_group" "green" {
   vpc_id      = aws_vpc.main.id
 
   health_check {
-    path = "/"
+    path    = "/api/healthz"
+    matcher = "200-399"
   }
 }
 
@@ -199,7 +199,7 @@ resource "aws_lb_listener" "https" {
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.blue.arn
+    target_group_arn = aws_lb_target_group.green.arn
   }
 }
 
@@ -276,6 +276,27 @@ resource "aws_iam_role_policy_attachment" "exec_ecr" {
 
 data "aws_caller_identity" "self" {}
 
+# --- IAM policy that lets terraform-deployer manage inline
+#     policies on the odin-task-exec role -------------------
+resource "aws_iam_role_policy" "tf_can_manage_task_exec_policies" {
+  name = "tf-manage-task-exec-inline-policies"
+  role = "terraform-deployer"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect   = "Allow"
+      Action   = [
+        "iam:PutRolePolicy",
+        "iam:DeleteRolePolicy",
+        "iam:GetRolePolicy"
+      ]
+      Resource = "arn:aws:iam::${data.aws_caller_identity.self.account_id}:role/odin-task-exec"
+    }]
+  })
+}
+
+
 ########################
 # Secrets Manager for Auth0
 ########################
@@ -333,12 +354,17 @@ resource "aws_ecs_task_definition" "service" {
 
       # ── all non-secret cookie & domain settings in "environment" ────────────────
       environment = [
+        { name = "SITE_URL",                   value = "https://ethanetwork.com" },
+        { name = "NEXT_PUBLIC_SITE_URL",       value = "https://ethanetwork.com" },
+        { name = "INTERNAL_GRAPHQL_URL",       value = "http://127.0.0.1:3000/api/graphql" },
         { name = "AUTH0_BASE_URL",             value = "https://ethanetwork.com" },
         { name = "NEXT_PUBLIC_AUTH0_BASE_URL", value = "https://ethanetwork.com" },
         { name = "AUTH0_COOKIE_DOMAIN",        value = ".ethanetwork.com" },
         { name = "AUTH0_COOKIE_SAME_SITE",     value = "none" },
         { name = "AUTH0_COOKIE_SECURE",        value = "true" },
-        { name = "AUTH0_AUDIENCE",             value = "https://odin-book.local/graphql" }
+        { name = "AUTH0_AUDIENCE",             value = "https://odin-book.local/graphql" },
+        { name = "S3_BUCKET",                  value = "odin-media-1" },
+        { name = "S3_REGION",                  value = "us-west-1" }
       ]
     }
   ])
@@ -400,7 +426,7 @@ resource "random_password" "db_pw" {
 resource "aws_db_instance" "postgres" {
   identifier             = "odin-postgres"
   engine                 = "postgres"
-  engine_version         = "16.6"
+  engine_version         = "16.8"
   instance_class         = "db.t3.micro"
   username               = "odin"
   password               = random_password.db_pw.result
@@ -530,5 +556,34 @@ resource "aws_iam_role_policy" "task_get_auth0_secret" {
       Action   = "secretsmanager:GetSecretValue",
       Resource = data.aws_secretsmanager_secret.auth0.arn
     }]
+  })
+}
+
+##############################################
+#  allow the task to read/write odin-media-1 #
+##############################################
+resource "aws_iam_role_policy" "task_s3_media" {
+  name = "odin-task-s3-media"
+  role = aws_iam_role.task_execution.id    
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:PutObjectAcl",
+          "s3:DeleteObject"
+        ]
+        Resource = "arn:aws:s3:::odin-media-1/*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["s3:ListBucket"]
+        Resource = "arn:aws:s3:::odin-media-1"
+      }
+    ]
   })
 }

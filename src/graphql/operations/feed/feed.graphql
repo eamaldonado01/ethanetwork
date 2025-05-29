@@ -1,26 +1,13 @@
-fragment PostFragment on Post {
-  id
-  content
-  imageUrl
-  likeCount
-  commentCount
-  viewerHasLiked
-  createdAt
-  author {
-    id
-    username
-    imageUrl
-  }
-}
-
-query Feed($first: Int!, $after: ID) {
+query Feed($first: Int = 20, $after: ID) {
   feed(first: $first, after: $after) {
     edges {
       cursor
       node {
-        ...PostFragment
+        ...PostFragment   # now carries imageUrl
       }
     }
     hasNextPage
   }
 }
+
+# make sure the fragment is pulled in
