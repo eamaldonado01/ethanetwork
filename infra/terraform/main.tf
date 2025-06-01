@@ -285,8 +285,8 @@ resource "aws_iam_role_policy" "tf_can_manage_task_exec_policies" {
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Effect   = "Allow"
-      Action   = [
+      Effect = "Allow"
+      Action = [
         "iam:PutRolePolicy",
         "iam:DeleteRolePolicy",
         "iam:GetRolePolicy"
@@ -343,28 +343,30 @@ resource "aws_ecs_task_definition" "service" {
 
       # ── only truly secret values in "secrets" ─────────────────────────────────
       secrets = [
-        { name = "AUTH0_SECRET",        valueFrom = "${data.aws_secretsmanager_secret.auth0.arn}:AUTH0_SECRET::" },
+        { name = "AUTH0_SECRET", valueFrom = "${data.aws_secretsmanager_secret.auth0.arn}:AUTH0_SECRET::" },
         { name = "AUTH0_CLIENT_SECRET", valueFrom = "${data.aws_secretsmanager_secret.auth0.arn}:AUTH0_CLIENT_SECRET::" },
-        { name = "AUTH0_CLIENT_ID",     valueFrom = "${data.aws_secretsmanager_secret.auth0.arn}:AUTH0_CLIENT_ID::" },
+        { name = "AUTH0_CLIENT_ID", valueFrom = "${data.aws_secretsmanager_secret.auth0.arn}:AUTH0_CLIENT_ID::" },
         { name = "AUTH0_ISSUER_BASE_URL", valueFrom = "${data.aws_secretsmanager_secret.auth0.arn}:AUTH0_ISSUER_BASE_URL::" },
 
-        { name = "DATABASE_URL",        valueFrom = aws_ssm_parameter.db_url.arn },
-        { name = "REDIS_URL",           valueFrom = aws_ssm_parameter.redis_url.arn }
+        { name = "DATABASE_URL", valueFrom = aws_ssm_parameter.db_url.arn },
+        { name = "REDIS_URL", valueFrom = aws_ssm_parameter.redis_url.arn }
       ]
 
       # ── all non-secret cookie & domain settings in "environment" ────────────────
       environment = [
-        { name = "SITE_URL",                   value = "https://ethanetwork.com" },
-        { name = "NEXT_PUBLIC_SITE_URL",       value = "https://ethanetwork.com" },
-        { name = "INTERNAL_GRAPHQL_URL",       value = "http://127.0.0.1:3000/api/graphql" },
-        { name = "AUTH0_BASE_URL",             value = "https://ethanetwork.com" },
+        { name = "SITE_URL", value = "https://ethanetwork.com" },
+        { name = "NEXT_PUBLIC_SITE_URL", value = "https://ethanetwork.com" },
+        { name = "PORT", value = "3000" },
+        { name = "HOST", value = "0.0.0.0" },
+        { name = "INTERNAL_GRAPHQL_URL", value = "http://127.0.0.1:3000/api/graphql" },
+        { name = "AUTH0_BASE_URL", value = "https://ethanetwork.com" },
         { name = "NEXT_PUBLIC_AUTH0_BASE_URL", value = "https://ethanetwork.com" },
-        { name = "AUTH0_COOKIE_DOMAIN",        value = ".ethanetwork.com" },
-        { name = "AUTH0_COOKIE_SAME_SITE",     value = "none" },
-        { name = "AUTH0_COOKIE_SECURE",        value = "true" },
-        { name = "AUTH0_AUDIENCE",             value = "https://odin-book.local/graphql" },
-        { name = "S3_BUCKET",                  value = "odin-media-1" },
-        { name = "S3_REGION",                  value = "us-west-1" }
+        { name = "AUTH0_COOKIE_DOMAIN", value = ".ethanetwork.com" },
+        { name = "AUTH0_COOKIE_SAME_SITE", value = "none" },
+        { name = "AUTH0_COOKIE_SECURE", value = "true" },
+        { name = "AUTH0_AUDIENCE", value = "https://odin-book.local/graphql" },
+        { name = "S3_BUCKET", value = "odin-media-1" },
+        { name = "S3_REGION", value = "us-west-1" }
       ]
     }
   ])
@@ -511,27 +513,27 @@ resource "aws_iam_role_policy" "AllowRDSAndElastiCacheSubnetGroups" {
         Sid    = "AllowSsmCrudOnOdin",
         Effect = "Allow",
         Action = [
-          "ssm:GetParameter","ssm:GetParameters",
-          "ssm:PutParameter","ssm:DeleteParameter","ssm:ListTagsForResource"
+          "ssm:GetParameter", "ssm:GetParameters",
+          "ssm:PutParameter", "ssm:DeleteParameter", "ssm:ListTagsForResource"
         ],
         Resource = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.self.account_id}:parameter/odin/*"
       },
       {
-        Sid    = "AllowSsmDescribeGlobal",
-        Effect = "Allow",
-        Action = ["ssm:DescribeParameters"],
+        Sid      = "AllowSsmDescribeGlobal",
+        Effect   = "Allow",
+        Action   = ["ssm:DescribeParameters"],
         Resource = "*"
       },
       {
         Sid    = "AllowRdsAndCacheCrud",
         Effect = "Allow",
         Action = [
-          "rds:CreateDBSubnetGroup","rds:DeleteDBSubnetGroup","rds:DescribeDBSubnetGroups","rds:ListTagsForResource",
-          "rds:AddTagsToResource","rds:RemoveTagsFromResource","rds:CreateDBInstance","rds:DeleteDBInstance",
-          "rds:DescribeDBInstances","rds:ModifyDBInstance","rds:StartDBInstance","rds:StopDBInstance",
-          "elasticache:CreateCacheSubnetGroup","elasticache:DeleteCacheSubnetGroup","elasticache:DescribeCacheSubnetGroups",
-          "elasticache:ListTagsForResource","elasticache:AddTagsToResource","elasticache:RemoveTagsFromResource",
-          "elasticache:CreateCacheCluster","elasticache:DeleteCacheCluster","elasticache:DescribeCacheClusters",
+          "rds:CreateDBSubnetGroup", "rds:DeleteDBSubnetGroup", "rds:DescribeDBSubnetGroups", "rds:ListTagsForResource",
+          "rds:AddTagsToResource", "rds:RemoveTagsFromResource", "rds:CreateDBInstance", "rds:DeleteDBInstance",
+          "rds:DescribeDBInstances", "rds:ModifyDBInstance", "rds:StartDBInstance", "rds:StopDBInstance",
+          "elasticache:CreateCacheSubnetGroup", "elasticache:DeleteCacheSubnetGroup", "elasticache:DescribeCacheSubnetGroups",
+          "elasticache:ListTagsForResource", "elasticache:AddTagsToResource", "elasticache:RemoveTagsFromResource",
+          "elasticache:CreateCacheCluster", "elasticache:DeleteCacheCluster", "elasticache:DescribeCacheClusters",
           "elasticache:ModifyCacheCluster"
         ],
         Resource = [
@@ -564,14 +566,14 @@ resource "aws_iam_role_policy" "task_get_auth0_secret" {
 ##############################################
 resource "aws_iam_role_policy" "task_s3_media" {
   name = "odin-task-s3-media"
-  role = aws_iam_role.task_execution.id    
+  role = aws_iam_role.task_execution.id
 
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "s3:GetObject",
           "s3:PutObject",
           "s3:PutObjectAcl",
@@ -585,5 +587,23 @@ resource "aws_iam_role_policy" "task_s3_media" {
         Resource = "arn:aws:s3:::odin-media-1"
       }
     ]
+  })
+}
+
+################################################################################
+# Public-read policy for odin-media-1
+################################################################################
+resource "aws_s3_bucket_policy" "media_public_read" {
+  bucket = "odin-media-1"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Sid       = "PublicRead",
+      Effect    = "Allow",
+      Principal = "*",
+      Action    = ["s3:GetObject"],
+      Resource  = "arn:aws:s3:::odin-media-1/*"
+    }]
   })
 }

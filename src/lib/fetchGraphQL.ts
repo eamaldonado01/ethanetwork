@@ -2,35 +2,25 @@
 import { print } from 'graphql';
 import type { DocumentNode } from 'graphql';
 
-const REL = '/api/graphql';
+const PATH = '/api/graphql';
 
-/* -------------------------------------------------------------------------- */
-/*  Decide the GraphQL endpoint                                               */
-/* -------------------------------------------------------------------------- */
+/* Decide the endpoint exactly once */
 function endpoint(): string {
-  /* ─────────────── Browser (client side) ─────────────── */
   if (typeof window !== 'undefined') {
-    return `${window.location.origin}${REL}`; // e.g. https://ethanetwork.com/api/graphql
+    return `${window.location.origin}${PATH}`;
   }
 
-  /* ─────────────── Server (Node.js side) ─────────────── */
-  // 1️⃣ Prefer the dedicated private URL if present.
-  const internal = process.env.INTERNAL_GRAPHQL_URL;
-  if (internal) return internal.replace(/\/$/, '');
+  /* Prefer the task ENI if we have it (ECS) */
+  if (process.env.TASK_ENI_IP)
+    return `http://${process.env.TASK_ENI_IP}:${process.env.PORT ?? '3000'}${PATH}`;
 
-  // 2️⃣ Fallback to the public site URL.
-  const base =
-    process.env.SITE_URL ??
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    (process.env.NODE_ENV === 'production'
-      ? (() => {
-          throw new Error(
-            'One of INTERNAL_GRAPHQL_URL, SITE_URL or NEXT_PUBLIC_SITE_URL must be set in production',
-          );
-        })()
-      : 'http://localhost:3000'); // ← dev convenience (never used in prod)
+  /* Fallbacks identical to api.ts */
+  if (process.env.INTERNAL_GRAPHQL_URL)
+    return process.env.INTERNAL_GRAPHQL_URL.replace(/\/$/, '');
 
-  return base.replace(/\/$/, '') + REL;
+  const port = process.env.PORT ?? '3000';
+  const host = process.env.HOST ?? '127.0.0.1';
+  return `http://${host}:${port}${PATH}`;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -42,7 +32,7 @@ export async function fetchGraphQL<TData, TVars>(
 ): Promise<TData> {
   const headers: HeadersInit = { 'content-type': 'application/json' };
 
-  /* Forward browser cookies during SSR/RSC -------------------------------- */
+  /* Forward cookies during SSR/RSC */
   if (typeof window === 'undefined') {
     const { cookies } = await import('next/headers');
     const store = await cookies();
@@ -61,7 +51,6 @@ export async function fetchGraphQL<TData, TVars>(
     body: JSON.stringify({ query, variables }),
   });
 
-  /* Basic sanity-check ---------------------------------------------------- */
   const ctype = res.headers.get('content-type') ?? '';
   if (!ctype.includes('application/json')) {
     const text = await res.text();

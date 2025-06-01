@@ -86,7 +86,7 @@ export default function ProfileClient({ initialUser, editable = true }: Props) {
       {/* header */}
       <header className="flex items-center gap-6">
         <Image
-          src={user.imageUrl ?? '/default-avatar.png'}
+          src={user.imageUrl ?? '/default-avatar.jpg'}
           alt="avatar"
           width={80}
           height={80}

@@ -27,7 +27,7 @@ export default function UsersClient() {
         >
           <div className="flex items-center gap-3">
             <Image
-              src={u.imageUrl || '/default-avatar.png'}
+              src={u.imageUrl || '/default-avatar.jpg'}
               alt={`${u.username} avatar`}
               width={32}
               height={32}

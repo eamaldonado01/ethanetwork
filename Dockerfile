@@ -78,6 +78,10 @@ COPY --from=build /app/node_modules/.bin        ./node_modules/.bin
 RUN rm -f .env .env.* || true
 
 # ── network & entrypoint ------------------------------------------------------
+# ── add the entry script & make it executable ---------------------------------
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
+# ── network & entrypoint ------------------------------------------------------
 EXPOSE 3000
-ENTRYPOINT ["/usr/bin/tini","--"]
-CMD ["sh","-c","npx prisma migrate deploy && node server.js"]
+ENTRYPOINT ["/usr/bin/tini","--","/app/docker-entrypoint.sh"]

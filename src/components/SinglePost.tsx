@@ -161,7 +161,7 @@ export default function SinglePost({
               className="group flex w-full items-start gap-3 rounded bg-neutral-900 p-4 shadow transition-colors hover:bg-neutral-800"
             >
               <Image
-                src={c.author.imageUrl ?? '/default-avatar.png'}
+                src={c.author.imageUrl ?? '/default-avatar.jpg'}
                 alt="avatar"
                 width={32}
                 height={32}

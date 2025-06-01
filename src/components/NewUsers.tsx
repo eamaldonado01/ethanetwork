@@ -64,7 +64,7 @@ export default function NewUsers() {
           <div key={u.id} className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Image
-                src={u.imageUrl ?? '/default-avatar.png'}
+                src={u.imageUrl ?? '/default-avatar.jpg'}
                 alt="avatar"
                 width={24}
                 height={24}

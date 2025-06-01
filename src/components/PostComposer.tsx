@@ -1,3 +1,4 @@
+/* ─── src/components/PostComposer.tsx ───────────────────────────────────── */
 'use client';
 
 import { useState, useRef, useLayoutEffect } from 'react';
@@ -10,90 +11,134 @@ import GifPicker from '@/components/GifPicker';
 
 const MAX = 2_000;
 
+/* helper – try to read { error: string } from an unknown value */
+function extractMessage(u: unknown): string | undefined {
+  return typeof u === 'object' && u !== null && 'error' in u
+    ? String((u as { error?: unknown }).error)
+    : undefined;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Helper: request signed URL then PUT the file                              */
+/* -------------------------------------------------------------------------- */
+async function uploadImage(file: File): Promise<string> {
+  /* 1. ask backend for a signed PUT url */
+  const signRes = await fetch('/api/upload', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ fileName: file.name, fileType: file.type }),
+  });
+
+  if (!signRes.ok) {
+    const msg = extractMessage(await signRes.json().catch(() => ({})));
+    throw new Error(`sign-url failed: ${msg ?? signRes.status}`);
+  }
+
+  const { url, publicUrl } = (await signRes.json()) as {
+    url: string;
+    publicUrl: string;
+  };
+
+  /* 2. upload the bytes to S3 – content-type *must* match the signed value */
+  const putRes = await fetch(url, {
+    method: 'PUT',
+    headers: { 'content-type': file.type },
+    body: file,
+  });
+
+  if (!putRes.ok) throw new Error(`S3 upload failed: ${putRes.status}`);
+  return publicUrl; // return the CDN-visible URL
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Component                                                                 */
+/* -------------------------------------------------------------------------- */
 export default function PostComposer() {
-  /* ───────────────────────── state */
+  /* state ------------------------------------------------------------------ */
   const [content, setContent] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const [remoteUrl, setRemoteUrl] = useState<string | null>(null); // gif url
-  const [preview, setPreview] = useState<string | null>(null);
+  const [remoteUrl, setRemote] = useState<string | null>(null); // gif URL
+  const [preview, setPreview] = useState<string | null>(null); // local <img>
   const [showGif, setShowGif] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   const router = useRouter();
   const txtRef = useRef<HTMLTextAreaElement | null>(null);
 
-  /* ───────────────────────── apollo */
-  const [create, { loading }] = useMutation(CreatePost, {
-    onCompleted: () => {
+  /* apollo ----------------------------------------------------------------- */
+  const [create] = useMutation(CreatePost, {
+    onCompleted() {
       setContent('');
       setFile(null);
-      setRemoteUrl(null);
+      setRemote(null);
       setPreview(null);
       router.push('/home');
     },
   });
 
-  /* ───────────────────────── helpers */
-  function autoResize() {
+  /* auto-resize textarea ---------------------------------------------------- */
+  useLayoutEffect(() => {
     if (!txtRef.current) return;
     txtRef.current.style.height = '0px';
-    txtRef.current.style.height = txtRef.current.scrollHeight + 'px';
-  }
+    txtRef.current.style.height = `${txtRef.current.scrollHeight}px`;
+  }, [content]);
 
-  useLayoutEffect(autoResize, [content]);
-
-  const handleSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  /* pickers ---------------------------------------------------------------- */
+  function selectFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (f) {
       setFile(f);
       setPreview(URL.createObjectURL(f));
-      // clear remote gif if new image chosen
-      setRemoteUrl(null);
+      setRemote(null); // remove gif preview
     }
-  };
+  }
 
-  const handleGifChosen = (url: string) => {
-    setRemoteUrl(url);
+  function gifChosen(url: string) {
+    setRemote(url);
     setPreview(url);
-    // clear local file if gif chosen
-    setFile(null);
+    setFile(null); // remove image preview
     setShowGif(false);
-  };
+  }
 
-  const removeMedia = () => {
+  function removeMedia() {
     setFile(null);
-    setRemoteUrl(null);
+    setRemote(null);
     setPreview(null);
-  };
+  }
 
-  /* at least text OR some media must be present */
+  /* post ------------------------------------------------------------------- */
   const canPost = content.trim().length > 0 || file || remoteUrl;
 
-  const submit = async () => {
-    if (!canPost) return;
+  async function submit() {
+    if (!canPost || busy) return;
+    setBusy(true);
 
-    const variables: Record<string, unknown> = { content: content.trim() };
+    try {
+      let imageUrl: string | undefined;
+      if (file) imageUrl = await uploadImage(file);
+      else if (remoteUrl) imageUrl = remoteUrl;
 
-    if (file) variables.image = file; // presuming backend handles upload
-    if (remoteUrl) variables.imageUrl = remoteUrl;
+      await create({ variables: { content: content.trim(), imageUrl } });
+    } catch (err) {
+      console.error('upload/post error →', err);
+      alert('Upload failed – please try again.');
+      setBusy(false);
+    }
+  }
 
-    await create({ variables }).catch(console.error);
-  };
-
-  /* ───────────────────────── view */
+  /* ui --------------------------------------------------------------------- */
   return (
     <div className="rounded bg-neutral-900 p-4 shadow">
       <textarea
         ref={txtRef}
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        onInput={autoResize}
         placeholder="Share something…"
         maxLength={MAX}
         rows={2}
         className="min-h-[6rem] w-full resize-none bg-transparent text-sm outline-none"
       />
 
-      {/* media preview */}
       {preview && (
         <div className="relative mt-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -113,56 +158,46 @@ export default function PostComposer() {
 
       <div className="mt-4 flex items-center justify-between">
         <div className="flex gap-2">
-          {/* image input */}
-          <label
-            title="Add image"
-            className="cursor-pointer rounded bg-indigo-600 p-3 hover:bg-indigo-500 disabled:opacity-50"
-          >
+          {/* image */}
+          <label className="cursor-pointer rounded bg-indigo-600 p-3 hover:bg-indigo-500 disabled:opacity-50">
             <ImageIcon size={24} />
-            <span className="sr-only">Add image</span>
             <input
               type="file"
               accept="image/*"
               hidden
-              onChange={handleSelectFile}
-              disabled={loading}
+              onChange={selectFile}
+              disabled={busy}
             />
           </label>
 
-          {/* gif picker */}
+          {/* gif */}
           <button
             type="button"
             title="Add GIF"
-            className="rounded bg-indigo-600 p-3 hover:bg-indigo-500 disabled:opacity-50"
             onClick={() => setShowGif(true)}
-            disabled={loading}
+            disabled={busy}
+            className="rounded bg-indigo-600 p-3 hover:bg-indigo-500 disabled:opacity-50"
           >
             <Film size={24} />
-            <span className="sr-only">Add GIF</span>
           </button>
         </div>
 
         <div className="flex items-center gap-3">
-          {/* character count */}
           <span className="text-xs text-zinc-400">
             {content.length}/{MAX}
           </span>
-
           <button
             onClick={submit}
-            disabled={!canPost || loading}
+            disabled={!canPost || busy}
             className="rounded bg-indigo-600 px-4 py-2 text-sm text-white transition-colors hover:bg-indigo-500 disabled:opacity-50"
           >
-            {loading ? 'Posting…' : 'Post'}
+            {busy ? 'Posting…' : 'Post'}
           </button>
         </div>
       </div>
 
       {showGif && (
-        <GifPicker
-          onSelect={handleGifChosen}
-          onClose={() => setShowGif(false)}
-        />
+        <GifPicker onSelect={gifChosen} onClose={() => setShowGif(false)} />
       )}
     </div>
   );

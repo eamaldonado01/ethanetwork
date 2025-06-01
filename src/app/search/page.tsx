@@ -101,7 +101,7 @@ export default function SearchPage() {
             >
               <div className="flex items-center gap-3">
                 <Image
-                  src={u.imageUrl ?? '/default-avatar.png'}
+                  src={u.imageUrl ?? '/default-avatar.jpg'}
                   alt={`${u.name} avatar`}
                   width={32}
                   height={32}

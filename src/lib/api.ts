@@ -1,29 +1,30 @@
-// ─── src/lib/api.ts ──────────────────────────────────────────────
+// ─── src/lib/api.ts ───────────────────────────────────────────
 import { print } from 'graphql';
 import type { DocumentNode } from 'graphql';
 import gqlTag from 'graphql-tag';
 
-/* ────────────────────────────────────────────────────────────────
- * Decide the GraphQL endpoint (same logic everywhere)
- * ────────────────────────────────────────────────────────────────*/
+/* Decide the GraphQL endpoint (identical on client & server) */
 function graphqlURL(): string {
-  /* browser – always talk to the current origin */
+  /* ─── browser ─── */
   if (typeof window !== 'undefined') return '/api/graphql';
 
-  /* server side */
+  /* ─── server (Node.js) ─── */
+  const port = process.env.PORT ?? '3000';
+
+  /* Prefer the task-scoped ENI IP that ECS injects for us ───── */
+  if (process.env.TASK_ENI_IP)
+    return `http://${process.env.TASK_ENI_IP}:${port}/api/graphql`;
+
+  /* Explicit override via Dockerfile / env -------------------- */
   if (process.env.INTERNAL_GRAPHQL_URL)
     return process.env.INTERNAL_GRAPHQL_URL.replace(/\/$/, '');
 
-  const base =
-    process.env.SITE_URL ??
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    'http://127.0.0.1:3000'; // dev / ultimate fallback
-
-  return base.replace(/\/$/, '') + '/api/graphql';
+  /* Last-chance fallback (works in `npm run dev`) -------------- */
+  return `http://127.0.0.1:${port}/api/graphql`;
 }
 
 /* ------------------------------------------------------------------ *
- * 1. Server-side execute helper (`gql`)                               *
+ * 1. Server-side execute helper (`gql`)
  * ------------------------------------------------------------------ */
 export async function gql<
   TData = unknown,
@@ -73,12 +74,13 @@ export async function gql<
 }
 
 /* ------------------------------------------------------------------ *
- * 2. Browser-side helper (CSR)                                        *
+ * 2. Browser-side helper (CSR)
  * ------------------------------------------------------------------ */
-export async function fetchGraphQL<
-  TData = unknown,
-  TVars extends Record<string, unknown> = Record<string, never>,
->(query: string, variables?: TVars, init: RequestInit = {}): Promise<TData> {
+export async function fetchGraphQL<TData, TVars>(
+  query: string,
+  variables?: TVars,
+  init: RequestInit = {},
+): Promise<TData> {
   const res = await fetch('/api/graphql', {
     method: 'POST',
     ...init,
@@ -94,7 +96,7 @@ export async function fetchGraphQL<
 }
 
 /* ------------------------------------------------------------------ *
- * 3. Convenience helpers (unchanged)                                  *
+ * 3. Convenience helpers
  * ------------------------------------------------------------------ */
 
 /* —— Post with comments —————————————————————————— */

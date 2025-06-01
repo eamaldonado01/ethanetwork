@@ -19,6 +19,9 @@ function graphqlURL(): string {
   if (typeof window !== 'undefined') return '/api/graphql';
 
   /* ——— server side ——— */
+  if (process.env.TASK_ENI_IP)
+    return `http://${process.env.TASK_ENI_IP}:${process.env.PORT ?? '3000'}/api/graphql`;
+
   if (process.env.INTERNAL_GRAPHQL_URL)
     return process.env.INTERNAL_GRAPHQL_URL.replace(/\/$/, '');
 
@@ -28,7 +31,7 @@ function graphqlURL(): string {
     (process.env.NODE_ENV === 'production'
       ? (() => {
           throw new Error(
-            'Set INTERNAL_GRAPHQL_URL **or** SITE_URL / NEXT_PUBLIC_SITE_URL in production',
+            'Set TASK_ENI_IP / INTERNAL_GRAPHQL_URL **or** SITE_URL / NEXT_PUBLIC_SITE_URL in production',
           );
         })()
       : 'http://localhost:3000');

@@ -9,6 +9,6 @@ terraform {
 }
 
 provider "aws" {
-  region  = var.region              # already defined elsewhere
-  profile = "terraform-deployer"    # ← exact profile name in ~/.aws/config
+  region  = var.region           # already defined elsewhere
+  profile = "terraform-deployer" # ← exact profile name in ~/.aws/config
 }

@@ -127,7 +127,7 @@ export default function PostCard({ post, onDeleted }: Props) {
       {/* header */}
       <header className="mb-3 flex items-center gap-3 text-sm">
         <Image
-          src={post.author.imageUrl ?? '/default-avatar.png'}
+          src={post.author.imageUrl ?? '/default-avatar.jpg'}
           alt="avatar"
           width={32}
           height={32}
