@@ -5,10 +5,10 @@ const ALB_HEALTH_UA = 'ELB-HealthChecker';
 const PREVIEW_BOTS =
   /(linkedinbot|twitterbot|facebookexternalhit|slackbot|discordbot|whatsapp)/i;
 
-/* Helper ─ treat bare-host (“”) and “/” exactly the same */
+/* helper ─ treat bare host (“”) and “/” the same */
 const isRoot = (p: string) => p === '/' || p === '';
 
-/* — single static preview page — edit title / desc / image as you like */
+/* —­­ single static preview page — */
 const OG_HTML = /* html */ `<!DOCTYPE html><html lang="en"><head>
 <meta charset="utf-8" />
 <title>ethanetwork – build in public</title>
@@ -36,12 +36,12 @@ export function middleware(req: NextRequest) {
   const unauth = !session && !guest;
   const headOrGet = req.method === 'HEAD' || req.method === 'GET';
 
-  /* 1 ▸ ALB health checks -------------------------------------------------- */
+  /* 1 ▸ ALB health checks ----------------------------------------------- */
   if (pathname === '/api/health' || ua.startsWith(ALB_HEALTH_UA)) {
     return NextResponse.next();
   }
 
-  /* 2 ▸ Public assets / API / robots.txt bypass auth ---------------------- */
+  /* 2 ▸ Public assets / API / robots.txt bypass auth --------------------- */
   if (
     pathname.startsWith('/api') ||
     pathname.startsWith('/_next') ||
@@ -51,7 +51,7 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  /* 3 ▸ Anyone hitting the root without a session gets OG ----------------- */
+  /* 3 ▸ Anyone (bot or human) at root without a session gets OG ---------- */
   if (isRoot(pathname) && unauth && headOrGet) {
     return new NextResponse(req.method === 'HEAD' ? undefined : OG_HTML, {
       status: 200,
@@ -59,7 +59,7 @@ export function middleware(req: NextRequest) {
     });
   }
 
-  /* 4 ▸ Social-preview bots get OG on any path ---------------------------- */
+  /* 4 ▸ Known social preview bots get OG anywhere ----------------------- */
   if (PREVIEW_BOTS.test(ua)) {
     return new NextResponse(req.method === 'HEAD' ? undefined : OG_HTML, {
       status: 200,
@@ -67,7 +67,7 @@ export function middleware(req: NextRequest) {
     });
   }
 
-  /* 5 ▸ Every other request needs Auth0 or the guest cookie --------------- */
+  /* 5 ▸ All other pages need Auth0 or the guest cookie ------------------ */
   if (unauth) {
     const returnTo = encodeURIComponent(`${pathname}${search}`);
     return NextResponse.redirect(
@@ -75,11 +75,14 @@ export function middleware(req: NextRequest) {
     );
   }
 
-  /* ✅ Authenticated traffic proceeds normally --------------------------- */
+  /* ✅ Authenticated traffic proceeds normally -------------------------- */
   return NextResponse.next();
 }
 
-/* Apply everywhere except static assets / Next internals ----------------- */
+/* Apply everywhere **including** “/” ------------------------------------ */
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    '/', // ← root path
+    '/((?!_next/static|_next/image|favicon.ico).*)', // everything else
+  ],
 };
