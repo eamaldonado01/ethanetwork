@@ -1,56 +1,39 @@
-/* ─── src/globals.css ──────────────────────────────────────────────── */
+/* ─── src/globals.css ───────────────────────────────────────────── */
 
-/* 1 ▸ Tailwind base / components / utilities  */
+/* 1 ▸ Tailwind base / components / utilities */
 @import 'tailwindcss';
 
-/* 2 ▸ Design-tokens (light first, then overridden in dark) */
+/* 2 ▸ ***Dark is default*** -------------------------------------- */
 :root {
   /* neutrals */
-  --bg: #fdfdfd;
-  --bg-subtle: #f1f1f1;
-  --border: #e5e5e5;
-  --text: #111;
-  --text-soft: #555;
-
-  /* brand accent */
-  --accent: #4f46e5; /* indigo-600 */
-  --accent-hover: #6366f1; /* indigo-500 */
-  --accent-muted: #c7d2fe; /* indigo-200 */
-
-  /* fonts */
-  --font-sans: var(--font-geist-sans, Inter, sans-serif);
-  --font-mono: var(--font-geist-mono, ui-monospace, SFMono-Regular, monospace);
-}
-
-/* 3 ▸ Dark-theme overrides */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0a0a0a;
-    --bg-subtle: #111;
-    --border: #242424;
-    --text: #f1f1f1;
-    --text-soft: #9b9b9b;
-
-    /* identical accent values in dark mode */
-    --accent: #4f46e5;
-    --accent-hover: #6366f1;
-    --accent-muted: #312e81; /* indigo-900-ish, muted */
-  }
-}
-
-.dark :root {
   --bg: #0a0a0a;
   --bg-subtle: #111;
   --border: #242424;
   --text: #f1f1f1;
   --text-soft: #9b9b9b;
 
+  /* accent */
   --accent: #4f46e5;
   --accent-hover: #6366f1;
   --accent-muted: #312e81;
+
+  --font-sans: var(--font-geist-sans, Inter, sans-serif);
+  --font-mono: var(--font-geist-mono, ui-monospace, SFMono-Regular, monospace);
 }
 
-/* 4 ▸ Global element resets / defaults */
+/* 3 ▸ Optional light theme (apply with <html class="light">) */
+.light :root {
+  --bg: #fdfdfd;
+  --bg-subtle: #f1f1f1;
+  --border: #e5e5e5;
+  --text: #111;
+  --text-soft: #555;
+  --accent: #4f46e5;
+  --accent-hover: #6366f1;
+  --accent-muted: #c7d2fe;
+}
+
+/* 4 ▸ Resets / defaults */
 * {
   box-sizing: border-box;
 }
@@ -70,7 +53,11 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* 5 ▸ Utility helpers */
+html {
+  color-scheme: dark;
+} /* <- critical for Safari */
+
+/* 5 ▸ Helpers */
 .text-soft {
   color: var(--text-soft) !important;
 }
@@ -81,16 +68,14 @@ body {
   background: var(--bg-subtle) !important;
 }
 
-/* ——— updated anchor rules ——— */
 a {
   color: inherit;
   text-decoration: none;
-} /* ← inherits utility colour */
+}
 a:hover {
   color: var(--accent-hover);
 }
 
-/* 6 ▸ Interactive cursor helper — all clickable elements get pointer */
 :where(
   [onclick],
   button,
@@ -105,7 +90,7 @@ a:hover {
   cursor: pointer;
 }
 
-/* 7 ▸ Expose tokens to Tailwind utilities (optional) */
+/* 6 ▸ Expose tokens for Tailwind */
 @layer base {
   :root {
     --tw-color-background: var(--bg);
@@ -115,6 +100,29 @@ a:hover {
   }
 }
 
+/* 7 ▸ Mobile safe-area padding for bottom navbar */
+@media (max-width: 767px) {
+  nav {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  main {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* 8 ▸ Example */
 .post-hover:hover {
-  background: #262626; /* or use Tailwind: hover:bg-zinc-800 */
+  background: #262626;
+} /* or Tailwind: hover:bg-zinc-800 */
+
+/* ── minimum 48×48 px clickable area (WCAG & Apple HIG) ────────── */
+@layer utilities {
+  .touch-target {
+    min-width: 48px;
+    min-height: 48px;
+    display: inline-flex; /* keeps flex centring if needed   */
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent; /* nicer tap flash */
+  }
 }

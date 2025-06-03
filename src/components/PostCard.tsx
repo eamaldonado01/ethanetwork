@@ -148,8 +148,10 @@ export default function PostCard({ post, onDeleted }: Props) {
               e.stopPropagation();
               if (confirm('Delete this post?')) deletePost();
             }}
-            className="ml-auto rounded p-1 text-indigo-400 opacity-0 transition-opacity
-                       hover:bg-indigo-800/20 group-hover:opacity-100"
+            className="ml-auto rounded p-1 text-indigo-400
+                       opacity-100                   /* mobiles (< lg) */
+                       lg:opacity-0 lg:group-hover:opacity-100
+                       transition-opacity hover:bg-indigo-800/20"
             disabled={deleting}
           >
             <Trash2 size={16} strokeWidth={2} />

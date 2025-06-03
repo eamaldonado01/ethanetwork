@@ -182,7 +182,10 @@ export default function SinglePost({
                   {isMine && (
                     <button
                       onClick={() => handleDelete(c.id)}
-                      className="ml-auto rounded p-1 text-indigo-400 opacity-0 transition-opacity hover:bg-indigo-800/20 group-hover:opacity-100"
+                      className="ml-auto rounded p-1 text-indigo-400
+           opacity-100
+           lg:opacity-0 lg:group-hover:opacity-100
+           transition-opacity hover:bg-indigo-800/20"
                     >
                       <Trash2 size={12} strokeWidth={2} />
                     </button>

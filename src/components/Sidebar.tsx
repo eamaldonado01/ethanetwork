@@ -6,31 +6,26 @@ import { usePathname } from 'next/navigation';
 import { Home, PenLine, Search, User, LogOut } from 'lucide-react';
 import { useUser } from '@auth0/nextjs-auth0/client';
 
-/** Detect readable guest cookie */
-function hasGuestCookie(): boolean {
-  if (typeof document === 'undefined') return false;
-  return /(?:^|;\s*)guestUser=/.test(document.cookie);
-}
+/* — util: detect guest cookie — */
+const hasGuestCookie = () =>
+  typeof document !== 'undefined' &&
+  /(?:^|;\s*)guestUser=/.test(document.cookie);
 
 export default function Sidebar() {
   const pathname = usePathname() ?? '';
   const { user, isLoading } = useUser();
-
-  /* decide logout target */
   const [logoutHref, setLogoutHref] = useState('/api/auth/logout');
 
+  /* decide logout target (guest vs real user) */
   useEffect(() => {
-    /* 1️⃣  Auth0 session → keep default /api/auth/logout */
-    if (user) return;
-
-    /* 2️⃣  When user finished loading and is undefined, treat as guest */
+    if (user) return; // 1️⃣ logged-in Auth0 user → normal logout
     if (!isLoading) {
+      // 2️⃣ finished loading + no user → guest
       setLogoutHref('/api/guest/logout');
-      return;
+    } else if (hasGuestCookie()) {
+      // 3️⃣ first render fallback
+      setLogoutHref('/api/guest/logout');
     }
-
-    /* 3️⃣  During first render, fall back to cookie test */
-    if (hasGuestCookie()) setLogoutHref('/api/guest/logout');
   }, [user, isLoading]);
 
   const links = [
@@ -42,7 +37,11 @@ export default function Sidebar() {
   ] as const;
 
   return (
-    <aside className="fixed left-0 top-0 flex h-screen w-72 flex-col items-center bg-zinc-940 px-8 py-12">
+    /* hidden below lg, visible ≥ lg (same breakpoint as BottomNav) */
+    <aside
+      className="hidden lg:flex fixed left-0 top-0 h-screen w-72
+                      flex-col items-center bg-zinc-940 px-8 py-12"
+    >
       <h1 className="mb-10 text-2xl font-bold tracking-tight text-indigo-400">
         ethanetwork
       </h1>
@@ -51,26 +50,23 @@ export default function Sidebar() {
         {links.map(({ href, label, Icon }) => {
           const active = pathname === href || pathname.startsWith(href);
           const isLogout = label === 'Logout';
-          const base = `inline-flex w-max items-center gap-4 rounded-lg px-5 py-3 transition`;
+
+          const base =
+            'inline-flex w-max items-center gap-4 rounded-lg px-5 py-3 transition';
 
           const classes =
             active && !isLogout
               ? `${base} bg-zinc-800 text-indigo-500`
               : `${base} hover:bg-zinc-900 text-indigo-500`;
 
-          if (isLogout) {
-            return (
-              <a key={href} href={href} className={classes}>
-                <Icon size={24} />
-                {label}
-              </a>
-            );
-          }
-
-          return (
+          /* <a> for logout (external), <Link> for internal nav */
+          return isLogout ? (
+            <a key={href} href={href} className={classes}>
+              <Icon size={24} /> {label}
+            </a>
+          ) : (
             <Link key={href} href={href} className={classes}>
-              <Icon size={24} />
-              {label}
+              <Icon size={24} /> {label}
             </Link>
           );
         })}
