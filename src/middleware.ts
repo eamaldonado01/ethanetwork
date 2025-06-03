@@ -5,6 +5,9 @@ const ALB_HEALTH_UA = 'ELB-HealthChecker';
 const PREVIEW_BOTS =
   /(linkedinbot|twitterbot|facebookexternalhit|slackbot|discordbot|whatsapp)/i;
 
+/* Helper ─ treat bare-host (“”) and “/” exactly the same */
+const isRoot = (p: string) => p === '/' || p === '';
+
 /* — single static preview page — edit title / desc / image as you like */
 const OG_HTML = /* html */ `<!DOCTYPE html><html lang="en"><head>
 <meta charset="utf-8" />
@@ -48,15 +51,15 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  /* 3 ▸ Anyone (bot OR human) hitting “/” *without* a session gets OG ---- */
-  if (pathname === '/' && unauth && headOrGet) {
+  /* 3 ▸ Anyone hitting the root without a session gets OG ----------------- */
+  if (isRoot(pathname) && unauth && headOrGet) {
     return new NextResponse(req.method === 'HEAD' ? undefined : OG_HTML, {
       status: 200,
       headers: { 'content-type': 'text/html; charset=utf-8' },
     });
   }
 
-  /* 4 ▸ Social-preview bots get OG anywhere ------------------------------ */
+  /* 4 ▸ Social-preview bots get OG on any path ---------------------------- */
   if (PREVIEW_BOTS.test(ua)) {
     return new NextResponse(req.method === 'HEAD' ? undefined : OG_HTML, {
       status: 200,
@@ -64,7 +67,7 @@ export function middleware(req: NextRequest) {
     });
   }
 
-  /* 5 ▸ Every other page needs Auth0 or the guest cookie ----------------- */
+  /* 5 ▸ Every other request needs Auth0 or the guest cookie --------------- */
   if (unauth) {
     const returnTo = encodeURIComponent(`${pathname}${search}`);
     return NextResponse.redirect(
@@ -72,7 +75,7 @@ export function middleware(req: NextRequest) {
     );
   }
 
-  /* ✅ authenticated traffic proceeds normally --------------------------- */
+  /* ✅ Authenticated traffic proceeds normally --------------------------- */
   return NextResponse.next();
 }
 
