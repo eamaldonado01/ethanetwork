@@ -2,99 +2,72 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const ALB_HEALTH_UA = 'ELB-HealthChecker';
 
-// Include every variation of LinkedIn's crawler we have seen (libot, LinkedInBot …)
+// Preview‑crawler user‑agents *only* (no regular browsers)
 const PREVIEW_BOTS =
-  /(linkedinbot|linkedin|libot|twitterbot|facebookexternalhit|slackbot|discordbot|whatsapp|vkshare|telegrambot)/i;
+  /(linkedinbot|libot|twitterbot|facebookexternalhit|slackbot|discordbot|whatsapp|vkshare|telegrambot)/i;
 
-/**
- * Treat the marketing landing page as “root”.
- * Handles:
- *   – ""  (bare‑host requests that Next maps to an empty pathname)
- *   – "/"  (explicit trailing slash)
- *   – "/en" or "/en-US" (i18n default‑locale prefix with optional region)
- */
-const isLanding = (path: string) => {
-  if (path === '' || path === '/') return true;
-  return /^\/(?:[a-z]{2}(?:-[A-Z]{2})?)\/?$/.test(path);
-};
+/* ----------  Static OG response sent only to social crawlers ---------- */
+const OG_HTML = `<!doctype html><html lang="en"><head>
+<meta charset="utf-8">
+<title>ethanetwork — social app demo</title>
 
-/* —­­ single static preview page — */
-const OG_HTML = /* html */ `<!DOCTYPE html><html lang="en"><head>
-<meta charset="utf-8" />
-<title>ethanetwork – build in public</title>
+<meta property="og:type"        content="website">
+<meta property="og:url"         content="https://ethanetwork.com">
+<meta property="og:title"       content="ethanetwork — social app demo">
+<meta property="og:description" content="Dark‑mode first, guest log‑ins, mobile‑friendly… built with Next 14, Prisma, Postgres & Auth0.">
+<meta property="og:image"       content="https://ethanetwork.com/icon.png">
 
-<meta property="og:type"        content="website" />
-<meta property="og:url"         content="https://ethanetwork.com" />
-<meta property="og:title"       content="ethanetwork — social app demo" />
-<meta property="og:description"
-      content="Dark‑mode first, guest log‑ins, mobile‑friendly… built with Next 14, Prisma, Postgres & Auth0." />
-<meta property="og:image"       content="https://ethanetwork.com/og.jpg" />
-
-<meta name="twitter:card"       content="summary_large_image" />
-<meta name="twitter:title"      content="ethanetwork — social app demo" />
-<meta name="twitter:description"
-      content="Dark‑mode first, guest log‑ins, mobile‑friendly… built with Next 14, Prisma, Postgres & Auth0." />
-<meta name="twitter:image"      content="https://ethanetwork.com/og.jpg" />
+<meta name="twitter:card"        content="summary_large_image">
+<meta name="twitter:title"       content="ethanetwork — social app demo">
+<meta name="twitter:description" content="Dark‑mode first, guest log‑ins, mobile‑friendly… built with Next 14, Prisma, Postgres & Auth0.">
+<meta name="twitter:image"       content="https://ethanetwork.com/icon.png">
 </head><body></body></html>`;
 
-/* ─────────────────────────────────────────────────────────────── */
+/* --------------------------------------------------------------------- */
 export function middleware(req: NextRequest) {
   const ua = req.headers.get('user-agent') ?? '';
   const isPreviewBot = PREVIEW_BOTS.test(ua);
   const { pathname, search } = req.nextUrl;
-  const session = req.cookies.get('appSession')?.value;
-  const guest = req.cookies.get('guestUser')?.value;
-  const unauth = !session && !guest;
-  const headOrGet = req.method === 'HEAD' || req.method === 'GET';
+  const isAuthenticated =
+    req.cookies.has('appSession') || req.cookies.has('guestUser');
 
-  /* 0 ▸ Social preview bots get OG immediately -------------------- */
-  if (isPreviewBot && headOrGet) {
+  /* 0 ▸ Social crawlers always get the OG stub */
+  if (isPreviewBot && (req.method === 'GET' || req.method === 'HEAD')) {
     return new NextResponse(req.method === 'HEAD' ? null : OG_HTML, {
       status: 200,
       headers: {
         'content-type': 'text/html; charset=utf-8',
-        // Make it crystal‑clear that crawlers may index this response
         'x-robots-tag': 'all',
       },
     });
   }
 
-  /* 1 ▸ ALB health checks ----------------------------------------- */
+  /* 1 ▸ ALB health checks */
   if (pathname === '/api/health' || ua.startsWith(ALB_HEALTH_UA)) {
     return NextResponse.next();
   }
 
-  /* 2 ▸ Public assets / API / robots.txt bypass auth -------------- */
+  /* 2 ▸ Public assets & API bypass auth */
   if (
     pathname.startsWith('/api') ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon') ||
-    pathname === '/robots.txt'
+    pathname === '/robots.txt' ||
+    /\.(png|jpe?g|svg|webp|ico)$/i.test(pathname)
   ) {
     return NextResponse.next();
   }
 
-  /* 3 ▸ Landing page gets OG when unauth -------------------------- */
-  if (isLanding(pathname) && unauth && headOrGet) {
-    return new NextResponse(req.method === 'HEAD' ? null : OG_HTML, {
-      status: 200,
-      headers: { 'content-type': 'text/html; charset=utf-8' },
-    });
-  }
-
-  /* 4 ▸ Everything else requires auth or guest -------------------- */
-  if (unauth) {
+  /* 3 ▸ Redirect unauthenticated traffic to login */
+  if (!isAuthenticated) {
     const returnTo = encodeURIComponent(`${pathname}${search}`);
     return NextResponse.redirect(
       new URL(`/api/auth/login?returnTo=${returnTo}`, req.url),
     );
   }
 
-  /* ✅ Authenticated traffic proceeds normally -------------------- */
+  /* ✅ Authenticated traffic */
   return NextResponse.next();
 }
 
-/* Apply middleware everywhere ------------------------------------ */
-export const config = {
-  matcher: ['/:path*'],
-};
+export const config = { matcher: ['/:path*'] };
