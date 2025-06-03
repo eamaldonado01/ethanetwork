@@ -2,12 +2,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const ALB_HEALTH_UA = 'ELB-HealthChecker';
-
-/* common social / chat crawlers – case-insensitive */
 const PREVIEW_BOTS =
   /(linkedinbot|twitterbot|facebookexternalhit|slackbot|discordbot|whatsapp)/i;
 
-/* —— single static preview page (edit as needed) ——————————— */
+/* — single static preview page — edit title / desc / image as you like */
 const OG_HTML = /* html */ `<!DOCTYPE html><html lang="en"><head>
 <meta charset="utf-8" />
 <title>ethanetwork – build in public</title>
@@ -30,58 +28,55 @@ const OG_HTML = /* html */ `<!DOCTYPE html><html lang="en"><head>
 export function middleware(req: NextRequest) {
   const ua = req.headers.get('user-agent') ?? '';
   const { pathname, search } = req.nextUrl;
+  const session = req.cookies.get('appSession')?.value;
+  const guest = req.cookies.get('guestUser')?.value;
+  const unauth = !session && !guest;
+  const headOrGet = req.method === 'HEAD' || req.method === 'GET';
 
-  /* 1 ▸ AWS ALB health checks ----------------------------------- */
+  /* 1 ▸ ALB health checks -------------------------------------------------- */
   if (pathname === '/api/health' || ua.startsWith(ALB_HEALTH_UA)) {
     return NextResponse.next();
   }
 
-  /* 2 ▸ If the caller is a known crawler → serve OG page -------- */
-  if (PREVIEW_BOTS.test(ua)) {
-    return new NextResponse(req.method === 'HEAD' ? null : OG_HTML, {
-      status: 200,
-      headers: { 'content-type': 'text/html; charset=utf-8' },
-    });
-  }
-
-  /* 3 ▸ *Any* unauthenticated visit to “/” should see OG too ----- */
-  const session = req.cookies.get('appSession')?.value;
-  const guest = req.cookies.get('guestUser')?.value;
-
-  if (
-    !session &&
-    !guest &&
-    pathname === '/' &&
-    (req.method === 'GET' || req.method === 'HEAD')
-  ) {
-    return new NextResponse(req.method === 'HEAD' ? null : OG_HTML, {
-      status: 200,
-      headers: { 'content-type': 'text/html; charset=utf-8' },
-    });
-  }
-
-  /* 4 ▸ Public assets & API don’t need a session ---------------- */
+  /* 2 ▸ Public assets / API / robots.txt bypass auth ---------------------- */
   if (
     pathname.startsWith('/api') ||
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/favicon')
+    pathname.startsWith('/favicon') ||
+    pathname === '/robots.txt'
   ) {
     return NextResponse.next();
   }
 
-  /* 5 ▸ Everyone else must be logged in (Auth0 or guest cookie) - */
-  if (!session && !guest) {
+  /* 3 ▸ Anyone (bot OR human) hitting “/” *without* a session gets OG ---- */
+  if (pathname === '/' && unauth && headOrGet) {
+    return new NextResponse(req.method === 'HEAD' ? undefined : OG_HTML, {
+      status: 200,
+      headers: { 'content-type': 'text/html; charset=utf-8' },
+    });
+  }
+
+  /* 4 ▸ Social-preview bots get OG anywhere ------------------------------ */
+  if (PREVIEW_BOTS.test(ua)) {
+    return new NextResponse(req.method === 'HEAD' ? undefined : OG_HTML, {
+      status: 200,
+      headers: { 'content-type': 'text/html; charset=utf-8' },
+    });
+  }
+
+  /* 5 ▸ Every other page needs Auth0 or the guest cookie ----------------- */
+  if (unauth) {
     const returnTo = encodeURIComponent(`${pathname}${search}`);
     return NextResponse.redirect(
       new URL(`/api/auth/login?returnTo=${returnTo}`, req.url),
     );
   }
 
-  /* ✅ authenticated traffic proceeds normally ------------------ */
+  /* ✅ authenticated traffic proceeds normally --------------------------- */
   return NextResponse.next();
 }
 
-/* Apply everywhere except static assets / Next internals -------- */
+/* Apply everywhere except static assets / Next internals ----------------- */
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };
