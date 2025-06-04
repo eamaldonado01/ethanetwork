@@ -11,6 +11,10 @@ Technical Details
 - Socket.IO with Redis for real-time updates
 - Tailwind CSS for styling
 - Jest and Cypress for testing
+- Docker for containerizing the application
+- Infrastructure managed with Terraform
+- Deployed on AWS Fargate for scalable containers
+- Continuous integration handled via GitHub Actions
 
 Social Features
 
