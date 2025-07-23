@@ -25,69 +25,79 @@ export default function SearchPage() {
   const [follow] = useFollowUserMutation();
   const [unfollow] = useUnfollowUserMutation();
 
-  /* ─── live search (150 ms debounce) ────────────────────────────── */
+  /* ─── fetch all users or live search (150 ms debounce) ────────────────── */
   useEffect(() => {
+    // helper to map and sort users
+    const normalizeAndSort = (users: Record<string, any>[]) => {
+      const list: Hit[] = users.map(u => ({
+        id: u.id as string,
+        username: u.username as string,
+        name: (u.name as string | null) ?? (u.username as string),
+        imageUrl: (u.imageUrl as string | null) ?? null,
+        isFollowing: Boolean(u.isFollowing),
+      }));
+      // alphabetical by name
+      return list.sort((a, b) => a.name.localeCompare(b.name));
+    };
+
     if (!q.trim()) {
-      setHits([]);
+      // show all users alphabetically
+      (async () => {
+        try {
+          const apiUsers = (await searchUsers('')) as Record<string, any>[];
+          setHits(normalizeAndSort(apiUsers));
+        } catch {
+          // ignore
+        }
+      })();
       return;
     }
 
+    // live search when q is non-empty
     const handle = setTimeout(async () => {
       try {
-        const apiUsers = (await searchUsers(q.trim())) as Record<
-          string,
-          unknown
-        >[];
-
-        /* keep only users whose NAME starts with the query (case‑insensitive) */
+        const apiUsers = (await searchUsers(q.trim())) as Record<string, any>[];
         const regex = new RegExp('^' + q.trim(), 'i');
-        const newHits: Hit[] = apiUsers
-          .map((u) => ({
-            id: u.id as string,
-            username: u.username as string,
-            name: (u.name as string | null) ?? (u.username as string),
-            imageUrl: (u.imageUrl as string | null) ?? null,
-            isFollowing: Boolean(u.isFollowing),
-          }))
-          .filter((u) => regex.test(u.name));
-
-        setHits(newHits);
+        const filtered = normalizeAndSort(apiUsers).filter(u =>
+          regex.test(u.name),
+        );
+        setHits(filtered);
       } catch {
-        /* ignore network errors */
+        // ignore network errors
       }
     }, 150);
 
     return () => clearTimeout(handle);
   }, [q]);
 
-  /* ─── follow / unfollow helper ──────────────────────────────────── */
+  /* ─── follow / unfollow helper ────────────────────────────────────────── */
   const flipFollow = async (user: Hit) => {
     if (user.isFollowing) {
       await unfollow({ variables: { userId: user.id } });
     } else {
       await follow({ variables: { userId: user.id } });
     }
-    setHits((prev) =>
-      prev.map((x) =>
+    setHits(prev =>
+      prev.map(x =>
         x.id === user.id ? { ...x, isFollowing: !x.isFollowing } : x,
       ),
     );
   };
 
-  /* ─── render ───────────────────────────────────────────────────── */
+  /* ─── render ────────────────────────────────────────────────────────── */
   return (
     <main className="mx-auto max-w-2xl px-4">
       {/* search bar */}
       <input
         value={q}
-        onChange={(e) => setQ(e.target.value)}
+        onChange={e => setQ(e.target.value)}
         placeholder="Search users…"
         className="mb-6 w-full rounded bg-zinc-800 px-3 py-2 text-sm outline-none"
       />
 
       {/* results */}
       <ul className="space-y-3">
-        {hits.map((u) => {
+        {hits.map(u => {
           const btnClasses =
             (u.isFollowing
               ? 'border border-zinc-500 bg-transparent text-zinc-200 hover:bg-zinc-800'
