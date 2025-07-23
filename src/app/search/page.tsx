@@ -27,16 +27,22 @@ export default function SearchPage() {
 
   /* ─── fetch all users or live search (150 ms debounce) ────────────────── */
   useEffect(() => {
-    // helper to map and sort users
-    const normalizeAndSort = (users: Record<string, any>[]) => {
-      const list: Hit[] = users.map(u => ({
-        id: u.id as string,
-        username: u.username as string,
-        name: (u.name as string | null) ?? (u.username as string),
-        imageUrl: (u.imageUrl as string | null) ?? null,
-        isFollowing: Boolean(u.isFollowing),
-      }));
-      // alphabetical by name
+    /**
+     * normalizeAndSort
+     *   - users: raw array of records from the API
+     *   - returns Hit[], sorted alphabetically by name
+     */
+    const normalizeAndSort = (users: Record<string, unknown>[]): Hit[] => {
+      const list: Hit[] = users.map((u) => {
+        // we know the API always returns these fields correctly
+        const id = String(u.id);
+        const username = String(u.username);
+        const name = u.name != null ? String(u.name) : username;
+        const imageUrl = u.imageUrl != null ? String(u.imageUrl) : null;
+        const isFollowing = Boolean(u.isFollowing);
+
+        return { id, username, name, imageUrl, isFollowing };
+      });
       return list.sort((a, b) => a.name.localeCompare(b.name));
     };
 
@@ -44,8 +50,8 @@ export default function SearchPage() {
       // show all users alphabetically
       (async () => {
         try {
-          const apiUsers = (await searchUsers('')) as Record<string, any>[];
-          setHits(normalizeAndSort(apiUsers));
+          const raw = await searchUsers('');
+          setHits(normalizeAndSort(raw as Record<string, unknown>[]));
         } catch {
           // ignore
         }
@@ -56,12 +62,10 @@ export default function SearchPage() {
     // live search when q is non-empty
     const handle = setTimeout(async () => {
       try {
-        const apiUsers = (await searchUsers(q.trim())) as Record<string, any>[];
-        const regex = new RegExp('^' + q.trim(), 'i');
-        const filtered = normalizeAndSort(apiUsers).filter(u =>
-          regex.test(u.name),
-        );
-        setHits(filtered);
+        const raw = await searchUsers(q.trim());
+        const all = normalizeAndSort(raw as Record<string, unknown>[]);
+        const regex = new RegExp(`^${q.trim()}`, 'i');
+        setHits(all.filter((u) => regex.test(u.name)));
       } catch {
         // ignore network errors
       }
@@ -77,8 +81,8 @@ export default function SearchPage() {
     } else {
       await follow({ variables: { userId: user.id } });
     }
-    setHits(prev =>
-      prev.map(x =>
+    setHits((prev) =>
+      prev.map((x) =>
         x.id === user.id ? { ...x, isFollowing: !x.isFollowing } : x,
       ),
     );
@@ -90,14 +94,14 @@ export default function SearchPage() {
       {/* search bar */}
       <input
         value={q}
-        onChange={e => setQ(e.target.value)}
+        onChange={(e) => setQ(e.target.value)}
         placeholder="Search users…"
         className="mb-6 w-full rounded bg-zinc-800 px-3 py-2 text-sm outline-none"
       />
 
       {/* results */}
       <ul className="space-y-3">
-        {hits.map(u => {
+        {hits.map((u) => {
           const btnClasses =
             (u.isFollowing
               ? 'border border-zinc-500 bg-transparent text-zinc-200 hover:bg-zinc-800'

@@ -142,6 +142,7 @@ const SEARCH_USERS = gqlTag`
       username
       name
       imageUrl
+      isFollowing
     }
   }
 `;
